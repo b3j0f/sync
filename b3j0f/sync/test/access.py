@@ -30,7 +30,7 @@
 from unittest import main
 
 from b3j0f.utils.ut import UTCase
-from b3j0f.sync.access import Accessor
+from b3j0f.sync.access import Accessor, getglobalid, getidwpids, separator_char
 from b3j0f.sync.data import Data
 
 
@@ -98,10 +98,10 @@ class AccessorTest(UTCase):
     def setUp(self):
 
         self.datum = {}  # data by event
-        self.accessor = TestAccessor(resource=self, datatype=Data)
+        self.accessor = TestAccessor(store=self, datatype=Data)
         self.data = Data(accessor=self.accessor)
 
-    def notify(self, event, data):
+    def sync(self, event, data):
         """Resource notification function."""
 
         self.datum.setdefault(event, []).append(data)  # add data at event key
@@ -132,6 +132,94 @@ class AccessorTest(UTCase):
         accessordata = self.accessor.find()
 
         self.assertTrue(accessordata)
+
+    def test_create(self):
+        """Test the create method."""
+
+        data = self.accessor.create()
+
+        self.assertTrue(isinstance(data, Data))
+        self.assertIs(data.accessor, self.accessor)
+
+        data.save()
+
+        self.assertIn(data, self.accessor)
+
+
+class TestGetIdwPids(UTCase):
+    """Test the getidwpids function."""
+
+    def test_id(self):
+        """Test with a simple id."""
+
+        test_id = 'test'
+        _id, pids = getidwpids(_id=test_id)
+
+        self.assertEqual(_id, test_id)
+        self.assertFalse(pids)
+
+    def test_id_w_sep(self):
+        """Test with an _id and wrong separator char."""
+
+        test_id = 'test{0}'.format(separator_char)
+
+        _id, pids = getidwpids(_id=test_id)
+
+        self.assertEqual(_id, test_id)
+        self.assertFalse(pids)
+
+    def test_id_ko_ok_ko_ok_ko(self):
+        """Test with an _id followed by a wrong separator char, then a right,
+        and a wrong, and a right and a wrong.
+        """
+
+        test_id = 'test{0}10{0}8{0}rt{0}2{0}fgt{0}fr{0}'.format(
+            separator_char
+        )
+
+        _id, pids = getidwpids(_id=test_id)
+
+        self.assertEqual(_id, 'test{0}10'.format(separator_char))
+        self.assertEqual(pids, ['rt', 'fgt{0}fr{0}'.format(separator_char)])
+
+    def test_reverse(self):
+        """Test in reversing getglobalid parameters."""
+
+        test_id = 'test{0}10{0}8{0}rt{0}2{0}fgt{0}fr{0}'.format(
+            separator_char
+        )
+
+        _id, pids = getidwpids(_id=test_id)
+        globalid = getglobalid(_id=_id, pids=pids)
+
+        self.assertEqual(test_id, globalid)
+
+
+class TestGetGlobalId(UTCase):
+    """Test the getglobalid function."""
+
+    def test_id(self):
+        """Test with simple _id."""
+
+        test_id = 'test'
+        globalid = getglobalid(_id=test_id)
+
+        self.assertEqual(test_id, globalid)
+
+    def test_id_pids(self):
+        """Test with _id and pids."""
+
+        test_id = 'test'
+        pids = [test_id[:-1], test_id]
+
+        globalid = getglobalid(_id=test_id, pids=pids)
+
+        idtotest = '{0}{1}{4}{1}{2}{1}{5}{1}{3}'.format(
+            test_id, separator_char, pids[0], pids[1],
+            len(test_id), len(pids[0])
+        )
+        self.assertEqual(globalid, idtotest)
+
 
 if __name__ == '__main__':
     main()

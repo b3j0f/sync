@@ -26,13 +26,15 @@
 
 """Accessor module."""
 
+__all__ = ['getglobalid', 'getidwpids', 'Accessor']
+
 separator_char = '::'  #: global id character separator.
 
 
 def getglobalid(_id, pids=None):
     """Get the global id related to input _id and parent ids.
 
-    Inverse of the getlocalid function.
+    Inverse of the getidwpids function.
 
     :param str _id: data id.
     :param list pids: parent data ids if data is embedded by other data.
@@ -47,10 +49,13 @@ def getglobalid(_id, pids=None):
     if pids is None:
         pids = []
 
+    count = len(result)
+
     for index, pid in enumerate(pids):
         result = '{0}{1}{2}{1}{3}'.format(
-            result, separator_char, len(result) - 4 * index, pid
+            result, separator_char, count, pid
         )
+        count = len(pid)
 
     return result
 
@@ -65,7 +70,7 @@ def _getcountvaluepid(count, currentid, lastid):
     :rtype: tuple
     """
 
-    count += count
+    count += len(separator_char)  # let's add separator_char len
     currentid = '{0}{1}{2}'.format(currentid, separator_char, lastid)
 
     return count, currentid
@@ -106,8 +111,11 @@ def getidwpids(_id):
 
     value = ids[0]  # current read id.
     count = 0  # count to check with separation character
+    index = 1
 
-    for index in range(1, len(ids)):  # path ids
+    len_ids = len(ids)
+
+    while index < len_ids:
         count += len(ids[index - 1])  # add number of read characters to count
         currentid = ids[index]  # read current id
 
@@ -119,15 +127,23 @@ def getidwpids(_id):
 
         else:  # elif separator is founded
             if ipid == count:
-                _updatelocalidpids(localid=localid, pids=pids, currentid=value)
-                value = ''
+                localid = _updatelocalidpids(
+                    localid=localid, pids=pids, currentid=value
+                )
+                count = 0
+                index += 1
+                value = ids[index] if index < len_ids else ''
 
             else:
                 count, value = _getcountvaluepid(count, value, currentid)
 
+        index += 1
+
     else:
         if value:
-            _updatelocalidpids(localid=localid, pids=pids, currentid=value)
+            localid = _updatelocalidpids(
+                localid=localid, pids=pids, currentid=value
+            )
 
     return localid, pids
 
@@ -135,7 +151,7 @@ def getidwpids(_id):
 class Accessor(object):
     """Data accessor.
 
-    Provides method to access to resource datum.
+    Provides method to access to store datum.
     """
 
     ADD = 1  #: add event value.
@@ -147,11 +163,11 @@ class Accessor(object):
     class Error(Exception):
         """Handle Accessor error."""
 
-    def __init__(self, resource, datatype):
+    def __init__(self, store, datatype):
 
         super(Accessor, self).__init__()
 
-        self.resource = resource
+        self.store = store
         self.datatype = datatype
 
     def __getitem__(self, key):
@@ -220,14 +236,14 @@ class Accessor(object):
 
         raise NotImplementedError()
 
-    def _process(self, data, process, notify, event, **kwargs):
-        """Process input process data CUD method and notify in case of
+    def _process(self, data, process, sync, event, **kwargs):
+        """Process input process data CUD method and sync in case of
         success.
 
         :param Data data: data to process.
         :param process: function to call with data and kwargs such as
             parameters.
-        :param bool notify: processing notification.
+        :param bool sync: processing notification.
         :param dict kwargs: processing additional parameters.
         :return: processing result.
         :rtype: Data
@@ -240,8 +256,8 @@ class Accessor(object):
         except Accessor.Error:
             pass
         else:
-            if notify:
-                self.resource.notify(data=data, event=event)
+            if sync:
+                self.store.sync(data=data, event=event)
 
         return result
 
@@ -256,35 +272,35 @@ class Accessor(object):
 
         return result
 
-    def add(self, data, notify=True):
-        """Add a data from this resource.
+    def add(self, data, sync=True):
+        """Add a data from this store.
 
         :param Data data: data to add.
-        :param bool notify: if True (default) notify the resource if data is
-            addd.
+        :param bool sync: if True (default) notify the store if data is
+            added.
         :raises: Accessor.Error if data already exists.
         """
 
         return self._process(
-            data=data, process=self._add, notify=notify, event=Accessor.ADD
+            data=data, process=self._add, sync=sync, event=Accessor.ADD
         )
 
     def _add(self, data):
         """Method to override in order to specialize data creation.
 
-        :param Data data: data to add to this resource.
+        :param Data data: data to add to this store.
         :return addd data.
         :rtype: Data
         """
 
         raise NotImplementedError()
 
-    def update(self, data, old=None, notify=True):
-        """Update a data from this resource.
+    def update(self, data, old=None, sync=True):
+        """Update a data from this store.
 
         :param Data data: data to update.
         :param Data old: old data value.
-        :param bool notify: if True (default) notify the resource if data is
+        :param bool sync: if True (default) notify the store if data is
             updated.
         :return: updated data.
         :rtype: Data
@@ -292,14 +308,14 @@ class Accessor(object):
         """
 
         return self._process(
-            data=data, process=self._update, notify=notify, old=old,
+            data=data, process=self._update, sync=sync, old=old,
             event=Accessor.UPDATE
         )
 
     def _update(self, data, old):
         """Method to override in order to specialize data updating.
 
-        :param Data data: data to update from this resource.
+        :param Data data: data to update from this store.
         :param Data old: old data value.
         :return: updated data.
         :rtype: Data
@@ -308,11 +324,11 @@ class Accessor(object):
 
         raise NotImplementedError()
 
-    def remove(self, data, notify=True):
-        """Remove input data form this resource.
+    def remove(self, data, sync=True):
+        """Remove input data form this store.
 
         :param Data data: data to remove.
-        :param bool notify: if True (default) notify the resource if data is
+        :param bool sync: if True (default) sync the notify if data is
             removed.
         :return: removed data.
         :rtype: Data
@@ -320,14 +336,14 @@ class Accessor(object):
         """
 
         self._process(
-            data=data, process=self._remove, notify=notify,
+            data=data, process=self._remove, sync=sync,
             event=Accessor.REMOVE
         )
 
     def _remove(self, data):
         """Method to override in order to specialize data removing.
 
-        :param Data data: data to remove from this resource.
+        :param Data data: data to remove from this store.
         :return: removed data.
         :rtype: Data
         :raises: Accessor.Error if data does not exist or is not deletable.

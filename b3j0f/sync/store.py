@@ -125,10 +125,10 @@ class Store(Configurable):
 
         raise NotImplementedError()
 
-    def notify(self, data, event):
+    def sync(self, data, event):
         """Notify all handlers about data creation/modification/deletion."""
 
-        for handler in self.handlers:  # notify all handlers
+        for handler in self.handlers:  # sync all handlers
             handler(data=data, event=event, store=self)
 
     @staticmethod
@@ -200,7 +200,7 @@ class Store(Configurable):
         return result
 
     def __iadd__(self, other):
-        """Add an other data(s) and notify handlers."""
+        """Add an other data(s) and sync handlers."""
 
         datum = Store._otherdata(other=other)
 
@@ -225,7 +225,7 @@ class Store(Configurable):
         return result
 
     def __ior__(self, other):
-        """Update data(s) and notify handlers.
+        """Update data(s) and sync handlers.
 
         :param Data(s) other: data(s) to update.
         """
@@ -253,7 +253,7 @@ class Store(Configurable):
         return result
 
     def __isub__(self, other):
-        """Delete datum and notify handlers."""
+        """Delete datum and sync handlers."""
 
         datum = Store._otherdata(other)
 
@@ -262,7 +262,7 @@ class Store(Configurable):
 
     def __iand__(self, other):
         """Delete datum which are not in other datum, return the
-        intersection  and notify handlers.
+        intersection  and sync handlers.
 
         :param Data(s) other: datum to keep.
         :return: kept datum.
@@ -280,7 +280,7 @@ class Store(Configurable):
         self -= elementstoremove
 
     def __setitem__(self, key, item):
-        """Change of data and notify handlers.
+        """Change of data and sync handlers.
 
         :param Data key: old data value.
         :param Data data: new data value.
@@ -382,24 +382,24 @@ class Store(Configurable):
 
         return result
 
-    def add(self, data, notify=True):
+    def add(self, data, sync=True):
         """Add input data.
 
         :param Data data: data to add.
-        :param bool notify: if True (default), notify handlers.
+        :param bool sync: if True (default), sync handlers.
         :return: added data.
         :raises: Store.Error if data already exists or information are
             missing.
         """
 
-        return self._processdata(data=data, notify=notify, processname='add')
+        return self._processdata(data=data, sync=sync, processname='add')
 
-    def update(self, data, old=None, notify=True):
+    def update(self, data, old=None, sync=True):
         """Update input data.
 
         :param Data data: data to update.
         :param Data old: old data value.
-        :param bool notify: if True (default), notify handlers.
+        :param bool sync: if True (default), sync handlers.
         :return: updated data.
         :rtype: Data
         :raises: Store.Error if not upsert and data does not exist or
@@ -407,19 +407,19 @@ class Store(Configurable):
         """
 
         return self._processdata(
-            data=data, old=old, notify=notify, processname='update'
+            data=data, old=old, sync=sync, processname='update'
         )
 
-    def remove(self, data, notify=True):
+    def remove(self, data, sync=True):
         """Remove input data.
 
         :param Data data: data to delete.
-        :param bool notify: if True (default), notify handlers.
+        :param bool sync: if True (default), sync handlers.
         :return: deleted data.
         :rtype: Data
         :raises: Store.Error if data does not exist.
         """
 
         return self._processdata(
-            data=data, notify=notify, processname='remove'
+            data=data, sync=sync, processname='remove'
         )
