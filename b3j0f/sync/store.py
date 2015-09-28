@@ -35,6 +35,8 @@ from b3j0f.sync.access import Accessor, getidwpids
 
 from inspect import isclass
 
+__all__ = ['Store']
+
 
 class MetaStore(type):
     """Handle Store instantiation with autoconnection."""

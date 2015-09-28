@@ -41,11 +41,9 @@ from b3j0f.sync.test.access import TestAccessor
 class TestStore(Store):
     """Test Store implementation."""
 
-    def __init__(self, autoconnect=True, **kwargs):
+    def __init__(self, **kwargs):
 
-        super(TestStore, self).__init__(autoconnect=autoconnect, **kwargs)
-
-        self.connected = autoconnect
+        super(TestStore, self).__init__(**kwargs)
 
         self.datum = {}  # set of datum by id
 
@@ -78,26 +76,6 @@ class StoreTest(UTCase):
         """Store handler."""
 
         self.datum.setdefault(event, []).append(data)  # add data at event key
-
-
-class ConnectionTest(StoreTest):
-    """Test store connection."""
-
-    def test_autoconnect(self):
-        """Test when the store uses autoconnect."""
-
-        self.assertTrue(self.store.isconnected)
-
-        self.store.disconnect()
-
-        self.assertFalse(self.store.isconnected)
-
-    def test_notautoconnect(self):
-        """Test when autoconnect is False."""
-
-        store = TestStore(autoconnect=False)
-
-        self.assertFalse(store.isconnected)
 
 
 class AccessorsTest(StoreTest):

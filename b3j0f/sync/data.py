@@ -33,7 +33,7 @@ from random import randint
 
 from datetime import datetime
 
-from b3j0f.sync.access import Accessor, getidwpids
+from b3j0f.sync.access import getidwpids
 from b3j0f.utils.property import addproperties
 
 

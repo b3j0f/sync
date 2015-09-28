@@ -31,7 +31,10 @@ from b3j0f.utils.path import lookup
 from b3j0f.utils.iterable import ensureiterable
 from b3j0f.conf import ConfigurableRegistry, Parameter, add_category
 from b3j0f.sync.store import Store
+from b3j0f.sync.access import Accessor
 from b3j0f.sync.data import Data
+
+__all__ = ['Synchronizer']
 
 
 @add_category('SYNC', [Parameter('resources'), Parameter('tosync')])
@@ -82,14 +85,14 @@ class Synchronizer(ConfigurableRegistry):
 
             for resource in self._resources:
                 resource.removehandler(
-                    handler=self._eltcudtrigger, event=Resource.ALL
+                    handler=self._eltcudtrigger, event=Accessor.ALL
                 )
 
         self._resources = value
 
         for resource in value:
             resource.addhandler(
-                handler=self._eltcudtrigger, event=Resource.ALL
+                handler=self._eltcudtrigger, event=Accessor.ALL
             )
 
     @property
@@ -113,37 +116,37 @@ class Synchronizer(ConfigurableRegistry):
         resource.
 
         :param Data elt: created/updated/deleted element.
-        :param Resource resource: owner element.
+        :param Store resource: owner element.
         """
 
         for selfresource in self.resources:
 
             if resource.url != selfresource.url:
 
-                if event & Resource.ADD:
+                if event & Accessor.ADD:
                     try:
                         selfresource.addelt(elt=elt, notify=False)
-                    except Resource.Error:
+                    except Store.Error:
                         try:
                             selfresource.updateelt(
                                 elt=elt, old=old, notify=False
                             )
-                        except Resource.Error:
+                        except Store.Error:
                             pass
 
-                elif event & Resource.UPDATE:
+                elif event & Accessor.UPDATE:
                     try:
                         selfresource.updateelt(elt=elt, notify=False)
-                    except Resource.Error:
+                    except Store.Error:
                         try:
                             selfresource.addelt(elt=elt, notify=False)
-                        except Resource.Error:
+                        except Store.Error:
                             pass
 
-                elif event & Resource.REMOVE:
+                elif event & Accessor.REMOVE:
                     try:
                         selfresource.remelt(elt=elt, notify=False)
-                    except Resource.Error:
+                    except Store.Error:
                         pass
 
     def notify(self):
@@ -157,8 +160,8 @@ class Synchronizer(ConfigurableRegistry):
 
                     try:
                         resource += otherresource  # add elements
-                    except Resource.Error:
+                    except Store.Error:
                         try:
                             resource |= otherresource  # update elements
-                        except Resource.Error:
+                        except Store.Error:
                             pass
