@@ -52,9 +52,7 @@ def getglobalid(_id, pids=None):
     count = len(result)
 
     for index, pid in enumerate(pids):
-        result = '{0}{1}{2}{1}{3}'.format(
-            result, separator_char, count, pid
-        )
+        result = '{0}{1}{2}{1}{3}'.format(result, separator_char, count, pid)
         count = len(pid)
 
     return result
@@ -158,7 +156,7 @@ class Accessor(object):
     UPDATE = 2  #: update event value.
     REMOVE = 4  #: remove event value.
 
-    ALL = ADD + UPDATE + REMOVE
+    ALL = ADD | UPDATE | REMOVE  #: all event value.
 
     class Error(Exception):
         """Handle Accessor error."""
@@ -172,6 +170,9 @@ class Accessor(object):
 
     def __getitem__(self, key):
 
+        if not isinstance(key, basestring):
+            key = key._id
+
         _id, pids = getidwpids(key)
 
         result = self.get(_id=_id, pids=pids)
@@ -183,11 +184,23 @@ class Accessor(object):
 
     def __setitem__(self, key, value):
 
-        self.update(data=value, old=key)
+        old = key
+
+        if isinstance(old, basestring):
+            _id, pids = getidwpids(old)
+            old = self.get(_id=_id, pids=pids)
+
+        self.update(data=value, old=old)
 
     def __delitem__(self, key):
 
-        self.remove(data=key)
+        data = key
+
+        if isinstance(data, basestring):
+            _id, pids = getidwpids(data)
+            data = self.get(_id=_id, pids=pids)
+
+        self.remove(data=data)
 
     def __iter__(self):
 
@@ -209,7 +222,7 @@ class Accessor(object):
 
         _id, pids = getidwpids(other._id)
 
-        return self.get(_id=_id, pids=pids) is not None
+        return self.get(_id=_id, pids=pids)
 
     def get(self, _id, pids=None):
         """Get a data from _id and parent ids.
@@ -222,11 +235,11 @@ class Accessor(object):
 
         raise NotImplementedError()
 
-    def find(self, ids=None, desc=None, created=None, updated=None, **kwargs):
+    def find(self, ids=None, descs=None, created=None, updated=None, **kwargs):
         """Find datum which match input parameters.
 
         :param list ids: data names to retrieve.
-        :param str desc: data description entries.
+        :param list descs: list of regex to find in data description.
         :param datetime created: minimum data creation date time.
         :param datetime updated: minimum data updating date time.
         :param dict kwargs: additional search parameters.

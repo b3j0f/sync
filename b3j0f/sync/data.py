@@ -129,6 +129,7 @@ class Data(object):
 
         return hash(self._id).__cmp__(hash(other._id))
 
+    @property
     def isdirty(self):
         """
         :return: True iif data content has been modified after created by the
@@ -136,9 +137,10 @@ class Data(object):
         :rtype: bool
         """
 
-        return self._updatedfields
+        return len(self._updatedfields) > 0
 
-    def stored(self):
+    @property
+    def isstored(self):
         """
         :return: True iif this data exists in store.
         :rtype: bool
@@ -146,12 +148,21 @@ class Data(object):
 
         return self in self.accessor
 
+    def rollback(self):
+        """Rollback field values."""
+
+        for name in self._updatedfields:
+            field = self._updatedfields[name]
+            setattr(self, name, field)
+
+        self._updatedfields.clear()
+
     def save(self, sync=True):
-        """Save this Data and synchronize this content with other resources
-        if necessary.
+        """Save this Data and synchronize this content with other stores if
+        necessary.
 
         :param bool sync: if True (default) synchronize this data with all
-            resources.
+            stores.
         :raises: Accessor.Error in case of saving error.
         """
 
@@ -165,11 +176,12 @@ class Data(object):
 
         self._updatedfields.clear()  # finish to clear data
 
-    def rollback(self):
-        """Rollback field values."""
+    def delete(self, sync=True):
+        """Delete data in removing it from its store.
 
-        for name in self._updatedfields:
-            field = self._updatedfields[name]
-            setattr(self, name, field)
+        :param bool sync: if True (default) synchronize the deletion with all
+            stores.
+        :raises: Accessor.Error in case of removing error.
+        """
 
-        self._updatedfields.clear()
+        self.accessor.remove(data=self, sync=sync)

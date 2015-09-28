@@ -30,6 +30,7 @@
 from unittest import main
 
 from b3j0f.utils.ut import UTCase
+from b3j0f.utils.version import range
 from b3j0f.sync.data import Data
 
 
@@ -48,6 +49,9 @@ class DataTest(UTCase):
 
     def add(*args, **kwargs):
         """Emulate the accessor.add method."""
+
+    def remove(*args, **kwargs):
+        """Emulate the accessor.remove method."""
 
     def test_unique_id(self):
         """Test if several data has different _id."""
@@ -89,19 +93,23 @@ class DataTest(UTCase):
     def test_isdirty_rollback_save(self):
         """Test isdirty/rollback/save methods."""
 
-        self.assertFalse(self.data.isdirty())
+        self.assertFalse(self.data.isdirty)
 
         self.data.desc = ''
-        self.assertTrue(self.data.isdirty())
+        self.assertTrue(self.data.isdirty)
 
         self.data.rollback()
-        self.assertFalse(self.data.isdirty())
+        self.assertFalse(self.data.isdirty)
 
         self.data.desc = ''
-        self.assertTrue(self.data.isdirty())
+        self.assertTrue(self.data.isdirty)
 
         self.data.save()
-        self.assertFalse(self.data.isdirty())
+        self.assertFalse(self.data.isdirty)
+
+        self.data.delete()
+        self.assertFalse(self.data.isdirty)
+
 
 if __name__ == '__main__':
     main()

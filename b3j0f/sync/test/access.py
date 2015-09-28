@@ -37,9 +37,9 @@ from b3j0f.sync.data import Data
 class TestAccessor(Accessor):
     """Test Accessor implementation."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, datatype=Data, **kwargs):
 
-        super(TestAccessor, self).__init__(**kwargs)
+        super(TestAccessor, self).__init__(datatype=datatype, **kwargs)
 
         self.datum = {}  # set of datum by id
 
@@ -47,7 +47,7 @@ class TestAccessor(Accessor):
 
         return self.datum.get(_id)
 
-    def find(self, ids=None, desc=None, created=None, updated=None):
+    def find(self, ids=None, descs=None, created=None, updated=None):
 
         result = []
 
@@ -56,9 +56,9 @@ class TestAccessor(Accessor):
         else:
             result = self.datum.values()
 
-        if desc is not None:
+        if descs is not None:
             result += [
-                data for data in self.datum.values() if data.desc == desc
+                data for data in self.datum.values() if data.desc in descs
             ]
 
         if created is not None:
@@ -99,10 +99,10 @@ class AccessorTest(UTCase):
 
         self.datum = {}  # data by event
         self.accessor = TestAccessor(store=self, datatype=Data)
-        self.data = Data(accessor=self.accessor)
+        self.data = self.accessor.create()
 
     def sync(self, event, data):
-        """Resource notification function."""
+        """Store synchronization function."""
 
         self.datum.setdefault(event, []).append(data)  # add data at event key
 
@@ -133,17 +133,35 @@ class AccessorTest(UTCase):
 
         self.assertTrue(accessordata)
 
-    def test_create(self):
-        """Test the create method."""
+    def test_cud(self):
+        """Test the create/add/update/delete methods."""
 
-        data = self.accessor.create()
+        self.assertTrue(isinstance(self.data, Data))
+        self.assertIs(self.data.accessor, self.accessor)
 
-        self.assertTrue(isinstance(data, Data))
-        self.assertIs(data.accessor, self.accessor)
+        self.assertNotIn(self.data, self.accessor)
+        self.assertFalse(self.data.isstored)
 
-        data.save()
+        self.data.save()
 
-        self.assertIn(data, self.accessor)
+        self.assertTrue(self.data.isstored)
+        self.assertIn(self.data, self.accessor)
+
+        self.data.desc = ''
+
+        self.data.save()
+        self.assertTrue(self.data.isstored)
+
+        self.data.desc = 'test'
+        self.assertTrue(self.data.isdirty)
+        self.accessor.update(data=self.data)
+        self.assertTrue(self.data.isdirty)
+
+        data = self.accessor[self.data._id]
+        self.assertEqual(data.desc, 'test')
+
+        data.delete()
+        self.assertNotIn(data, self.accessor)
 
 
 class TestGetIdwPids(UTCase):
