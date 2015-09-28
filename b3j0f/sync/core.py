@@ -30,8 +30,8 @@ from b3j0f.utils.version import basestring
 from b3j0f.utils.path import lookup
 from b3j0f.utils.iterable import ensureiterable
 from b3j0f.conf import ConfigurableRegistry, Parameter, add_category
-from b3j0f.sync.resource import Resource
-from b3j0f.sync.elt import Element
+from b3j0f.sync.store import Store
+from b3j0f.sync.data import Data
 
 
 @add_category('SYNC', [Parameter('resources'), Parameter('tosync')])
@@ -112,7 +112,7 @@ class Synchronizer(ConfigurableRegistry):
         """Called when input element is created/updated/deleted from the input
         resource.
 
-        :param Element elt: created/updated/deleted element.
+        :param Data elt: created/updated/deleted element.
         :param Resource resource: owner element.
         """
 
@@ -162,76 +162,3 @@ class Synchronizer(ConfigurableRegistry):
                             resource |= otherresource  # update elements
                         except Resource.Error:
                             pass
-
-
-class SyncConf(object):
-    """Synchronization object which specifies element types and properties to
-    notify.
-    """
-
-    class Error(Exception):
-        """Handle SyncConf errors."""
-
-    __slots__ = ('cls', 'props')
-
-    def __init__(self, cls=Element, props=None):
-        """
-        :param cls: matching element class(es). Must be a sub class of Element.
-            Otherwise, it must matches with the class name.
-        :type cls: type or tuple
-        :param list props: element props to notify. property (regex) name(s).
-        """
-
-        self.cls = cls
-        self.props = () if props is None else ensureiterable(
-            props, exclude=str
-        )
-
-    def match(self, elt):
-        """True if this configuration matches with the input element.
-
-        :param Element elt: elt to match configuration.
-        :return: True iif this matches the element.
-        :rtype: bool
-        """
-
-        result = isinstance(elt, self.cls)
-
-        if result:
-            for prop in self.props:
-                result = hasattr(elt, prop)
-                if not result:
-                    break
-
-        return result
-
-    @staticmethod
-    def parser(value):
-        """SyncConf parser.
-
-        :param str value: SyncConf value to parse.
-        """
-
-        result = None
-
-        if value[0] in ('"', '{'):
-            val = Parameter.json(value)
-
-        else:
-            val = Parameter.array(value)
-
-        if isinstance(val, basestring):  # only class name is given
-            cls = lookup(val)
-            result = SyncConf(cls=cls)
-
-        elif isinstance(val, dict):  # only one class name and props are given
-            cls = lookup(val['cls'])
-            props = val['props']
-            result = SyncConf(cls=cls, props=props)
-
-        else:
-            raise SyncConf.Error(
-                'Wrong type {0}. str or dict expected'.format(value)
-            )
-
-        return result

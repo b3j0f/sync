@@ -64,10 +64,10 @@ Features
 
 The global architecture is composed of four classes:
 
-- Synchronizer: class which is linked to several resources in order to propagate data CRUD operations on these lasts.
-- Resource: class which represents a set of data, and uses one Accessor per data type in order to access to self data.
-- Accessor: class which permits to access to resource data.
-- Element: data content interface which is the an abstraction used to exchange data information among resources.
+- Synchronizer: class which is linked to several stores in order to propagate data CRUD operations on these last ones.
+- Stores: class which represents a set of data, and uses one Accessor per data type in order to access to self data.
+- Accessor: class which permits to access to store data.
+- Data: data content class which is the abstraction used to exchange data information among stores.
 
 Perspectives
 ============
