@@ -75,19 +75,19 @@ class TestAccessor(Accessor):
 
     def _add(self, data):
 
-        self.datum[data.id] = data
+        self.datum[data._id] = data
 
         return data
 
     def _update(self, data, old):
 
-        self.datum[data.id] = data
+        self.datum[data._id] = data
 
         return data
 
     def _remove(self, data):
 
-        del self.datum[data.id]
+        del self.datum[data._id]
 
         return data
 
@@ -98,8 +98,8 @@ class AccessorTest(UTCase):
     def setUp(self):
 
         self.datum = {}  # data by event
-        self.data = Data()
         self.accessor = TestAccessor(resource=self, datatype=Data)
+        self.data = Data(accessor=self.accessor)
 
     def notify(self, event, data):
         """Resource notification function."""
@@ -109,7 +109,7 @@ class AccessorTest(UTCase):
     def test_get(self):
         """Test the get method."""
 
-        accessordata = self.accessor.get(_id=self.data.id)
+        accessordata = self.accessor.get(_id=self.data._id)
         self.assertIsNone(accessordata)  # check accessor is empty
         self.assertFalse(self.datum)  # check this is false
 
@@ -117,7 +117,7 @@ class AccessorTest(UTCase):
         # check datum notifiaction
         self.assertEqual(self.datum, {Accessor.ADD: [self.data]})
 
-        accessordata = self.accessor.get(_id=self.data.id)
+        accessordata = self.accessor.get(_id=self.data._id)
         self.assertEqual(self.data, accessordata)
 
     def test_find(self):
