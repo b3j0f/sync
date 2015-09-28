@@ -157,7 +157,9 @@ class CRUDTest(StoreTest):
         self.assertNotIn(self.data, self.store)
         self.assertFalse(self.data.isstored)
 
+        self.assertFalse(self.datum)
         self.data.save()
+        self.assertEqual(self.datum, {Accessor.ADD: [self.data]})
 
         self.assertTrue(self.data.isstored)
         self.assertIn(self.data, self.store)
@@ -166,17 +168,36 @@ class CRUDTest(StoreTest):
 
         self.data.save()
         self.assertTrue(self.data.isstored)
+        self.assertEqual(
+            self.datum,
+            {Accessor.ADD: [self.data], Accessor.UPDATE: [self.data]}
+        )
 
         self.data.desc = 'test'
         self.assertTrue(self.data.isdirty)
         self.store.update(data=self.data)
         self.assertTrue(self.data.isdirty)
+        self.assertEqual(
+            self.datum,
+            {
+                Accessor.ADD: [self.data],
+                Accessor.UPDATE: [self.data, self.data]
+            }
+        )
 
         data = self.store[self.data._id]
         self.assertEqual(data.desc, 'test')
 
         data.delete()
         self.assertNotIn(data, self.store)
+        self.assertEqual(
+            self.datum,
+            {
+                Accessor.ADD: [self.data],
+                Accessor.UPDATE: [self.data, self.data],
+                Accessor.REMOVE: [self.data]
+            }
+        )
 
 
 if __name__ == '__main__':
