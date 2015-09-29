@@ -24,7 +24,7 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Data module.
+"""Model module.
 
 Contains definition of the abstract resource data.
 """
@@ -129,6 +129,10 @@ class Data(object):
 
         return hash(self._id).__cmp__(hash(other._id))
 
+    def __eq__(self, other):
+
+        return self._id.__eq__(other._id)
+
     @property
     def isdirty(self):
         """
@@ -157,11 +161,11 @@ class Data(object):
 
         self._updatedfields.clear()
 
-    def save(self, sync=True):
+    def save(self, notify=True):
         """Save this Data and synchronize this content with other stores if
         necessary.
 
-        :param bool sync: if True (default) synchronize this data with all
+        :param bool notify: if True (default) synchronize this data with all
             stores.
         :raises: Accessor.Error in case of saving error.
         """
@@ -170,18 +174,18 @@ class Data(object):
         old = self.accessor.get(_id=_id, pids=pids)
 
         if old is None:
-            self.accessor.add(data=self, sync=sync)
+            self.accessor.add(data=self, notify=notify)
         else:
-            self.accessor.update(data=self, old=old, sync=sync)
+            self.accessor.update(data=self, old=old, notify=notify)
 
         self._updatedfields.clear()  # finish to clear data
 
-    def delete(self, sync=True):
+    def delete(self, notify=True):
         """Delete data in removing it from its store.
 
-        :param bool sync: if True (default) synchronize the deletion with all
+        :param bool notify: if True (default) synchronize the deletion with all
             stores.
         :raises: Accessor.Error in case of removing error.
         """
 
-        self.accessor.remove(data=self, sync=sync)
+        self.accessor.remove(data=self, notify=notify)

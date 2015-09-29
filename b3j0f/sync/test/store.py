@@ -31,9 +31,10 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 from b3j0f.utils.path import getpath
+from b3j0f.utils.iterable import first
 from b3j0f.utils.version import range
 from b3j0f.sync.store import Store
-from b3j0f.sync.data import Data
+from b3j0f.sync.model import Data
 from b3j0f.sync.access import Accessor
 from b3j0f.sync.test.access import TestAccessor
 
@@ -62,6 +63,43 @@ class TestStore(Store):
         return self.connected
 
 
+class OtherDataTest(UTCase):
+    """Test the static _otherdata method."""
+
+    def setUp(self):
+
+        count = 5
+        self.datum = set(Data(accessor=None) for _ in range(count))
+
+    def test_store(self):
+        """Test with other is a Store."""
+
+        other = TestStore()
+        other.find = lambda: self.datum
+
+        result = Store._otherdata(other=other)
+
+        self.assertEqual(result, self.datum)
+
+    def test_data(self):
+        """Test with other is one Data."""
+
+        other = first(self.datum)
+
+        result = Store._otherdata(other=other)
+
+        self.assertEqual(result, set([other]))
+
+    def test_datum(self):
+        """Test with other is a set of Data."""
+
+        other = self.datum
+
+        result = Store._otherdata(other=other)
+
+        self.assertEqual(result, other)
+
+
 class StoreTest(UTCase):
     """Test Store object."""
 
@@ -69,35 +107,10 @@ class StoreTest(UTCase):
 
         self.accessorname = 'data'
         self.datum = {}  # data by event
-        self.store = TestStore(handlers=[self.handler])
+        self.store = TestStore()
         self.accessor = TestAccessor(store=self.store)
         self.store.accessors = {self.accessorname: self.accessor}
         self.data = self.store.create(accessor=self.accessorname)
-
-    def handler(self, event, data, **kwargs):
-        """Store handler."""
-
-        self.datum.setdefault(event, []).append(data)  # add data at event key
-
-
-class ConnectionTest(StoreTest):
-    """Test store connection."""
-
-    def test_autoconnect(self):
-        """Test when the store uses autoconnect."""
-
-        self.assertTrue(self.store.isconnected)
-
-        self.store.disconnect()
-
-        self.assertFalse(self.store.isconnected)
-
-    def test_notautoconnect(self):
-        """Test when autoconnect is False."""
-
-        store = TestStore(autoconnect=False)
-
-        self.assertFalse(store.isconnected)
 
 
 class AccessorsTest(StoreTest):
@@ -140,7 +153,104 @@ class AccessorsTest(StoreTest):
             self.assertIs(accessor.store, self.store)
 
 
-class CRUDTest(StoreTest):
+class ConnectionTest(StoreTest):
+    """Test store connection."""
+
+    def test_autoconnect(self):
+        """Test when the store uses autoconnect."""
+
+        self.assertTrue(self.store.isconnected)
+
+        self.store.disconnect()
+
+        self.assertFalse(self.store.isconnected)
+
+    def test_notautoconnect(self):
+        """Test when autoconnect is False."""
+
+        store = TestStore(autoconnect=False)
+
+        self.assertFalse(store.isconnected)
+
+
+class _HandlerTest(StoreTest):
+    """Abstract class providing an observer function."""
+
+    def observer(self, event, data, **kwargs):
+        """Store observer."""
+
+        self.datum.setdefault(event, []).append(data)  # add data at event key
+
+
+class HandlerTest(_HandlerTest):
+    """Test observers."""
+
+    def test_all(self):
+        """Test to add observer."""
+
+        self.assertFalse(self.store.observers)
+
+        self.store.addobserver(self.observer)
+
+        self.assertEqual(len(self.store.observers), 3)
+
+        self.store.removeobserver(self.observer)
+
+        self.assertFalse(self.store.observers)
+
+    def assert_observer(self, event=Accessor.ALL):
+        """Test to add observer listening to input events."""
+
+        self.assertFalse(self.store.observers)
+
+        self.store.addobserver(self.observer, event=event)
+
+        self.assertEqual(len(self.store.observers), 1)
+
+        self.store.removeobserver(self.observer, event=event)
+
+        self.assertFalse(self.store.observers)
+
+        self.store.addobserver(self.observer, event=event)
+        self.store.addobserver(self.observer, event=event)
+
+        self.assertEqual(len(self.store.observers), 1)
+        self.assertEqual(len(self.store.observers[event]), 1)
+
+        observer = lambda *args, **kwargs: None
+        self.store.addobserver(observer, event=event)
+
+        self.assertEqual(len(self.store.observers[event]), 2)
+
+        self.store.removeobserver(self.observer, event=event)
+        self.store.removeobserver(observer, event=event)
+
+        self.assertFalse(self.store.observers)
+
+    def test_add(self):
+        """Test to add observer listening ADD events."""
+
+        self.assert_observer(event=Accessor.ADD)
+
+    def test_update(self):
+        """Test to update observer listening UPDATE events."""
+
+        self.assert_observer(event=Accessor.UPDATE)
+
+    def test_remove(self):
+        """Test to remove observer listening REMOVE events."""
+
+        self.assert_observer(event=Accessor.REMOVE)
+
+
+class CRUDTest(_HandlerTest):
+    """Test Store CRUD."""
+
+    def setUp(self):
+
+        super(CRUDTest, self).setUp()
+
+        self.store.addobserver(observer=self.observer)
 
     def test_get(self):
         """Test the get method."""

@@ -26,142 +26,107 @@
 
 """Synchronizer module."""
 
-from b3j0f.utils.version import basestring
-from b3j0f.utils.path import lookup
-from b3j0f.utils.iterable import ensureiterable
 from b3j0f.conf import ConfigurableRegistry, Parameter, add_category
 from b3j0f.sync.store import Store
 from b3j0f.sync.access import Accessor
-from b3j0f.sync.data import Data
 
 __all__ = ['Synchronizer']
 
 
-@add_category('SYNC', [Parameter('resources'), Parameter('tosync')])
+@add_category('SYNC', [Parameter('stores')])
 class Synchronizer(ConfigurableRegistry):
-    """In charge of synchronizing development management tools.
-
-    The synchronization is done with a set of Resources and a set of SyncConf
-    objects.
-
-    Is is possible to specify which types of elements or which element property
-    to synchronize thanks to the ``tosync`` attribute.
-    If you want to specify an exclusive list of element types to synchronize,
-    specify them in the list by name.
+    """In charge of synchronizing Stores.
     """
 
-    def __init__(self, resources, tosync):
+    def __init__(self, stores):
         """
-        :param DMT(s) resources: DMT(S) to synchronize.
-        :param list tosync: element types to synchronize.
+        :param Store(s) stores: Stores to synchronize.
         """
 
         # init protected attributes
-        self._resources = None
-        self._tosync = None
+        self._stores = None
+        # synchronizing stores
+        self._synchonizingstores = set()
 
         # set attributes
-        self.resources = resources
-        self.tosync = tosync
+        self.stores = stores
 
     @property
-    def resources(self):
-        """Get self resources.
+    def stores(self):
+        """Get self stores.
 
-        :return: list of resources.
+        :return: list of stores.
         :rtype: list
         """
 
-        return self._resources
+        return self._stores
 
-    @resources.setter
-    def resources(self, value):
-        """Change of resources to use.
+    @stores.setter
+    def stores(self, value):
+        """Change of stores to use.
 
-        :param list value: list of resources to use.
+        :param list value: list of stores to use.
         """
 
-        if self._resources is not None:
+        if self._stores is not None:
 
-            for resource in self._resources:
-                resource.removehandler(
-                    handler=self._eltcudtrigger, event=Accessor.ALL
-                )
+            for store in self._stores:
+                store.observers.append(observer=self._trigger)
 
-        self._resources = value
+        self._stores = value
 
-        for resource in value:
-            resource.addhandler(
-                handler=self._eltcudtrigger, event=Accessor.ALL
-            )
+        for store in value:
+            store.addobserver(observer=self._trigger)
 
-    @property
-    def tosync(self):
-        """Get self tosync array.
-
-        :return: list of element type names, or dictionaries with keys
-        """
-
-        return self._tosync
-
-    @tosync.setter
-    def tosync(self, value):
-        """Change of tosync value.
-        """
-
-        self._tosync = value
-
-    def _eltcudtrigger(self, elt, resource, event, old=None):
+    def _trigger(self, data, store, event, old=None):
         """Called when input element is created/updated/deleted from the input
-        resource.
+        store.
 
-        :param Data elt: created/updated/deleted element.
-        :param Store resource: owner element.
+        :param Data data: created/updated/deleted element.
+        :param Store store: owner element.
+        :param int event: data notified event.
+        :param Data old: old data value.
         """
 
-        for selfresource in self.resources:
+        stores = [selfstore for selfstore in self.stores if selfstore != store]
 
-            if resource.url != selfresource.url:
+        for selfstore in stores:
 
-                if event & Accessor.ADD:
+            if event & Accessor.ADD:
+                try:
+                    selfstore.add(data=data, sync=False)
+                except Store.Error:
                     try:
-                        selfresource.addelt(elt=elt, notify=False)
-                    except Store.Error:
-                        try:
-                            selfresource.updateelt(
-                                elt=elt, old=old, notify=False
-                            )
-                        except Store.Error:
-                            pass
-
-                elif event & Accessor.UPDATE:
-                    try:
-                        selfresource.updateelt(elt=elt, notify=False)
-                    except Store.Error:
-                        try:
-                            selfresource.addelt(elt=elt, notify=False)
-                        except Store.Error:
-                            pass
-
-                elif event & Accessor.REMOVE:
-                    try:
-                        selfresource.remelt(elt=elt, notify=False)
+                        selfstore.update(data=data, old=old, sync=False)
                     except Store.Error:
                         pass
 
-    def notify(self):
-        """Synchronize all resources."""
-
-        for resource in self.resources:
-
-            for otherresource in self.resources:
-
-                if resource != otherresource:
-
+            elif event & Accessor.UPDATE:
+                try:
+                    selfstore.update(data=data, old=old, sync=False)
+                except Store.Error:
                     try:
-                        resource += otherresource  # add elements
+                        selfstore.add(data=data, sync=False)
                     except Store.Error:
-                        try:
-                            resource |= otherresource  # update elements
-                        except Store.Error:
-                            pass
+                        pass
+
+            elif event & Accessor.REMOVE:
+                try:
+                    selfstore.remelt(data=data, sync=False)
+                except Store.Error:
+                    pass
+
+    def sync(self, data=None, store=None):
+        """Synchronize stores.
+
+        :param Data(s) data: data to synchronize.
+        :param Store(s) store: store to synchronize. Default
+        """
+
+        events = Accessor.ADD | Accessor.UPDATE
+
+        for store in self.stores:
+
+            for data in store:
+
+                self._trigger(data=data, store=store, event=events)

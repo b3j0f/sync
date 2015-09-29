@@ -30,6 +30,8 @@ __all__ = ['getglobalid', 'getidwpids', 'Accessor']
 
 separator_char = '::'  #: global id character separator.
 
+from b3j0f.utils.version import basestring
+
 
 def getglobalid(_id, pids=None):
     """Get the global id related to input _id and parent ids.
@@ -249,14 +251,14 @@ class Accessor(object):
 
         raise NotImplementedError()
 
-    def _process(self, data, process, sync, event, **kwargs):
-        """Process input process data CUD method and sync in case of
+    def _process(self, data, process, notify, event, **kwargs):
+        """Process input process data CUD method and notify in case of
         success.
 
         :param Data data: data to process.
         :param process: function to call with data and kwargs such as
             parameters.
-        :param bool sync: processing notification.
+        :param bool notify: processing notification.
         :param dict kwargs: processing additional parameters.
         :return: processing result.
         :rtype: Data
@@ -269,8 +271,8 @@ class Accessor(object):
         except Accessor.Error:
             pass
         else:
-            if sync:
-                self.store.sync(data=data, event=event)
+            if notify:
+                self.store.notify(data=data, event=event)
 
         return result
 
@@ -285,17 +287,17 @@ class Accessor(object):
 
         return result
 
-    def add(self, data, sync=True):
+    def add(self, data, notify=True):
         """Add a data from this store.
 
         :param Data data: data to add.
-        :param bool sync: if True (default) notify the store if data is
+        :param bool notify: if True (default) notify the store if data is
             added.
         :raises: Accessor.Error if data already exists.
         """
 
         return self._process(
-            data=data, process=self._add, sync=sync, event=Accessor.ADD
+            data=data, process=self._add, notify=notify, event=Accessor.ADD
         )
 
     def _add(self, data):
@@ -308,12 +310,12 @@ class Accessor(object):
 
         raise NotImplementedError()
 
-    def update(self, data, old=None, sync=True):
+    def update(self, data, old=None, notify=True):
         """Update a data from this store.
 
         :param Data data: data to update.
         :param Data old: old data value.
-        :param bool sync: if True (default) notify the store if data is
+        :param bool notify: if True (default) notify the store if data is
             updated.
         :return: updated data.
         :rtype: Data
@@ -321,7 +323,7 @@ class Accessor(object):
         """
 
         return self._process(
-            data=data, process=self._update, sync=sync, old=old,
+            data=data, process=self._update, notify=notify, old=old,
             event=Accessor.UPDATE
         )
 
@@ -337,11 +339,11 @@ class Accessor(object):
 
         raise NotImplementedError()
 
-    def remove(self, data, sync=True):
+    def remove(self, data, notify=True):
         """Remove input data form this store.
 
         :param Data data: data to remove.
-        :param bool sync: if True (default) sync the notify if data is
+        :param bool notify: if True (default) notify the notify if data is
             removed.
         :return: removed data.
         :rtype: Data
@@ -349,7 +351,7 @@ class Accessor(object):
         """
 
         self._process(
-            data=data, process=self._remove, sync=sync,
+            data=data, process=self._remove, notify=notify,
             event=Accessor.REMOVE
         )
 

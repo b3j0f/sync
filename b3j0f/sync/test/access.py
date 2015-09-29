@@ -32,7 +32,7 @@ from unittest import main
 from b3j0f.utils.ut import UTCase
 from b3j0f.utils.version import basestring
 from b3j0f.sync.access import Accessor, getglobalid, getidwpids, separator_char
-from b3j0f.sync.data import Data
+from b3j0f.sync.model import Data
 
 
 class TestAccessor(Accessor):
@@ -102,8 +102,8 @@ class AccessorTest(UTCase):
         self.accessor = TestAccessor(store=self, datatype=Data)
         self.data = self.accessor.create()
 
-    def sync(self, event, data):
-        """Store synchronization function."""
+    def notify(self, event, data):
+        """Store notification function."""
 
         self.datum.setdefault(event, []).append(data)  # add data at event key
 

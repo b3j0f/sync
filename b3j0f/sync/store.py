@@ -30,7 +30,7 @@ from b3j0f.utils.version import basestring
 from b3j0f.utils.path import lookup
 from b3j0f.utils.iterable import ensureiterable
 from b3j0f.conf import Configurable, Parameter, add_category
-from b3j0f.sync.data import Data
+from b3j0f.sync.model import Data
 from b3j0f.sync.access import Accessor, getidwpids
 
 from inspect import isclass
@@ -61,11 +61,11 @@ class Store(Configurable):
         """Handle store errors."""
 
     def __init__(
-            self, handlers=None, autoconnect=True, accessors=None,
+            self, observers=None, autoconnect=True, accessors=None,
             *args, **kwargs
     ):
         """
-        :param list handlers: handlers which listen to data
+        :param list observers: observers which listen to data
             creation/modification/deletion.
         :param bool autoconnect: if True, connect this at the end of this
             execution.
@@ -78,7 +78,7 @@ class Store(Configurable):
         self._accessors = {}
 
         # set public attributes
-        self.handlers = handlers
+        self.observers = {} if observers is None else observers
         self.autoconnect = autoconnect
         self.accessors = accessors
 
@@ -132,6 +132,42 @@ class Store(Configurable):
                 'Wrong value {0}. dict expected'.format(value)
             )
 
+    def addobserver(self, observer, event=Accessor.ALL):
+        """Add an observer related to input event.
+
+        :param observer: observer to add.
+        :param int event: listening observer event. Default is ALL.
+        """
+
+        def _addobserver(_event):
+
+            if event & _event:
+                self.observers.setdefault(_event, set()).add(observer)
+
+        _addobserver(Accessor.ADD)  # add for ADD events
+        _addobserver(Accessor.UPDATE)  # add for UPDATE events
+        _addobserver(Accessor.REMOVE)  # add for REMOVE events
+
+    def removeobserver(self, observer, event=Accessor.ALL):
+        """Remove an observer related to input event.
+
+        :param observer: observer to remove.
+        :param int event: stop listening observer event.
+        """
+
+        def _removeobserver(_event):
+
+            if event & _event:  # if _event matches
+                observers = self.observers.get(_event)  # get observers
+                if observers:  # if observers is not empty
+                    observers.remove(observer)  # remove the observer
+                    if not observers:  # if observers[event] is empty
+                        del self.observers[_event]  # remove it from observers
+
+        _removeobserver(Accessor.ADD)  # remove for ADD events
+        _removeobserver(Accessor.UPDATE)  # remove for UPDATE events
+        _removeobserver(Accessor.REMOVE)  # remove for REMOVE events
+
     def connect(self):
         """Connect to the remote data with self attributes."""
 
@@ -160,11 +196,14 @@ class Store(Configurable):
 
         raise NotImplementedError()
 
-    def sync(self, data, event):
-        """Notify all handlers about data creation/modification/deletion."""
+    def notify(self, data, event):
+        """Notify all observers about data creation/modification/deletion."""
 
-        for handler in self.handlers:  # sync all handlers
-            handler(data=data, event=event, store=self)
+        observers = self.observers.get(event)
+
+        if observers:
+            for observer in observers:  # notify all observers
+                observer(data=data, event=event, store=self)
 
     @staticmethod
     def _otherdata(other):
@@ -240,7 +279,7 @@ class Store(Configurable):
         return result
 
     def __iadd__(self, other):
-        """Add an other data(s) and sync handlers."""
+        """Add an other data(s) and notify observers."""
 
         datum = Store._otherdata(other=other)
 
@@ -265,7 +304,7 @@ class Store(Configurable):
         return result
 
     def __ior__(self, other):
-        """Update data(s) and sync handlers.
+        """Update data(s) and notify observers.
 
         :param Data(s) other: data(s) to update.
         """
@@ -293,7 +332,7 @@ class Store(Configurable):
         return result
 
     def __isub__(self, other):
-        """Delete datum and sync handlers."""
+        """Delete datum and notify observers."""
 
         datum = Store._otherdata(other)
 
@@ -302,7 +341,7 @@ class Store(Configurable):
 
     def __iand__(self, other):
         """Delete datum which are not in other datum, return the
-        intersection  and sync handlers.
+        intersection  and notify observers.
 
         :param Data(s) other: datum to keep.
         :return: kept datum.
@@ -477,28 +516,28 @@ class Store(Configurable):
 
         return self._processdata(accessor=accessor, process='create', **kwargs)
 
-    def add(self, data, accessor=None, sync=True):
+    def add(self, data, accessor=None, notify=True):
         """Add input data.
 
         :param Data data: data to add.
         :param str accessor: accessor name to use. By default, find the best
             accessor able to process data.
-        :param bool sync: if True (default), sync handlers.
+        :param bool notify: if True (default), notify observers.
         :return: added data.
         :raises: Store.Error if data already exists or information are
             missing.
         """
 
         return self._processdata(
-            data=data, sync=sync, process='add', accessor=accessor
+            data=data, notify=notify, process='add', accessor=accessor
         )
 
-    def update(self, data, accessor=None, old=None, sync=True):
+    def update(self, data, accessor=None, old=None, notify=True):
         """Update input data.
 
         :param Data data: data to update.
         :param Data old: old data value.
-        :param bool sync: if True (default), sync handlers.
+        :param bool notify: if True (default), notify observers.
         :param str accessor: accessor name to use. By default, find the best
             accessor able to process data.
         :return: updated data.
@@ -508,15 +547,15 @@ class Store(Configurable):
         """
 
         return self._processdata(
-            data=data, old=old, sync=sync, process='update',
+            data=data, old=old, notify=notify, process='update',
             accessor=accessor
         )
 
-    def remove(self, data, sync=True, accessor=None):
+    def remove(self, data, notify=True, accessor=None):
         """Remove input data.
 
         :param Data data: data to delete.
-        :param bool sync: if True (default), sync handlers.
+        :param bool notify: if True (default), notify observers.
         :param str accessor: accessor name to use. By default, find the best
             accessor able to process data.
         :return: deleted data.
@@ -525,5 +564,5 @@ class Store(Configurable):
         """
 
         return self._processdata(
-            data=data, sync=sync, process='remove', accessor=accessor
+            data=data, notify=notify, process='remove', accessor=accessor
         )
