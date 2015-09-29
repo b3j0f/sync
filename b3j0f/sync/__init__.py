@@ -37,6 +37,6 @@ __version_info__ = 0, 0, 1, "alpha", 0
 __version__ = ".".join(str(v) for v in __version_info__[:3])
 
 from b3j0f.sync.core import Synchronizer
-from b3j0f.sync.data import Data
+from b3j0f.sync.model import Data
 from b3j0f.sync.store import Store
 from b3j0f.sync.access import Accessor, getglobalid, getidwpids

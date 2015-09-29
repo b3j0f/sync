@@ -38,12 +38,12 @@ from inspect import isclass
 __all__ = ['Store']
 
 
-class MetaStore(type):
+class _MetaStore(Configurable.__metaclass__):
     """Handle Store instantiation with autoconnection."""
 
     def __call__(cls, *args, **kwargs):
 
-        result = super(MetaStore, cls).__call__(*args, **kwargs)
+        result = super(_MetaStore, cls).__call__(*args, **kwargs)
 
         if result.autoconnect:  # connect the store if autoconnect
             result.connect()
@@ -55,10 +55,12 @@ class MetaStore(type):
 class Store(Configurable):
     """Abstract class in charge of accessing to datum."""
 
-    CATEGORY = 'STORE'  #: store category configuration name.
-
     class Error(Exception):
         """Handle store errors."""
+
+    __metaclass__ = _MetaStore
+
+    CATEGORY = 'STORE'  #: store category configuration name.
 
     def __init__(
             self, observers=None, autoconnect=True, accessors=None,
