@@ -47,7 +47,7 @@ DESCRIPTION = 'Synchronizer design pattern library'
 
 setup(
     name='b3j0f.sync',
-    version='0.0.3',
+    version='0.0.2',
     packages=find_packages(exclude=['test.*', '*.test.*']),
     author='b3j0f',
     author_email='jlabejof@yahoo.fr',
