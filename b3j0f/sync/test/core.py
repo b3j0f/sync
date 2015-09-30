@@ -29,7 +29,7 @@
 
 from unittest import main
 
-from b3j0f.sync.core import Synchronizer
+from ..core import Synchronizer
 
 
 class TestSynchronizer(Synchronizer):

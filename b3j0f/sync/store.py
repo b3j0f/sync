@@ -30,8 +30,9 @@ from b3j0f.utils.version import basestring
 from b3j0f.utils.path import lookup
 from b3j0f.utils.iterable import ensureiterable
 from b3j0f.conf import Configurable, Parameter, add_category, conf_paths
-from b3j0f.sync.model import Data
-from b3j0f.sync.access import Accessor, getidwpids
+
+from .model import Data
+from .access import Accessor, getidwpids
 
 from inspect import isclass
 

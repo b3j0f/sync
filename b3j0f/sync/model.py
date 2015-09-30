@@ -33,9 +33,9 @@ from random import randint
 
 from datetime import datetime
 
-from b3j0f.sync.access import getidwpids, getglobalid
 from b3j0f.utils.property import addproperties
 
+from .access import getidwpids, getglobalid
 
 __all__ = ['Data', 'datafields']
 

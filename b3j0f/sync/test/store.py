@@ -33,10 +33,11 @@ from b3j0f.utils.ut import UTCase
 from b3j0f.utils.path import getpath
 from b3j0f.utils.iterable import first
 from b3j0f.utils.version import range
-from b3j0f.sync.store import Store
-from b3j0f.sync.model import Data
-from b3j0f.sync.access import Accessor
-from b3j0f.sync.test.access import TestAccessor
+
+from ..store import Store
+from ..model import Data
+from ..access import Accessor
+from .access import TestAccessor
 
 
 class TestStore(Store):

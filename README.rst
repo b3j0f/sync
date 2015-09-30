@@ -71,7 +71,7 @@ The global architecture is composed of four classes:
 
 Therefore, one Store can be used by several synchronizers, and one Accessor can be used by several Stores.
 
-The Synchronizer and the Store are configurables (see `b3j0f.conf`_), while the Store, the Accessor and the Data are abstract classes.
+The Synchronizer and the Store are configurables (see `b3j0f.conf`_). Configuration files are installed in the ``~/etc/`` directory.
 
 If you want to specialize this system to your own needs, you have to extend abstract classes with implementation of 6 CRUD methods for the Accessor.
 

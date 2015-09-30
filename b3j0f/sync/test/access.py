@@ -30,9 +30,9 @@
 from unittest import main
 
 from b3j0f.utils.ut import UTCase
-from b3j0f.utils.version import basestring
-from b3j0f.sync.access import Accessor, getglobalid, getidwpids, separator_char
-from b3j0f.sync.model import Data
+
+from ..access import Accessor, getglobalid, getidwpids, separator_char
+from ..model import Data
 
 
 class TestAccessor(Accessor):
