@@ -52,7 +52,13 @@ class _MetaStore(Configurable.__metaclass__):
 
 
 @conf_paths('store.conf')
-@add_category('STORE', Parameter('accessors', parser=Parameter.dict))
+@add_category(
+    'STORE',
+    [
+        Parameter('accessors', parser=Parameter.dict),
+        Parameter('autoconnect', parser=Parameter.bool)
+    ]
+)
 class Store(Configurable):
     """Abstract class in charge of accessing to datum."""
 

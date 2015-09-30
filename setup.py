@@ -76,5 +76,6 @@ setup(
         "Programming Language :: Python :: 3.4"
     ],
     test_suite='b3j0f',
-    keywords=KEYWORDS
+    keywords=KEYWORDS,
+    data_files=[('~/etc/b3j0f.sync/', ['etc/store.conf'])]
 )

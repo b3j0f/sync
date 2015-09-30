@@ -77,9 +77,10 @@ If you want to specialize this system to your own needs, you have to extend abst
 
 The system does not use semantical mechanisms, therefore, the system is in a **best effort** mode instead to be exhaustive.
 
-Example::
+Examples
+--------
 
-   `b3j0f.dmts`_: development management tool synchronizer.
+- `b3j0f.dmts`_: development management tool synchronizer.
 
 Perspectives
 ============
