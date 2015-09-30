@@ -38,9 +38,11 @@ from b3j0f.sync.model import Data
 class TestAccessor(Accessor):
     """Test Accessor implementation."""
 
-    def __init__(self, datatype=Data, **kwargs):
+    __datatype__ = Data
 
-        super(TestAccessor, self).__init__(datatype=datatype, **kwargs)
+    def __init__(self, **kwargs):
+
+        super(TestAccessor, self).__init__(**kwargs)
 
         self.datum = {}  # set of datum by id
 
@@ -59,7 +61,8 @@ class TestAccessor(Accessor):
 
         if descs is not None:
             result += [
-                data for data in self.datum.values() if data.desc in descs
+                data for data in self.datum.values()
+                if data.description in descs
             ]
 
         if created is not None:
@@ -99,7 +102,7 @@ class AccessorTest(UTCase):
     def setUp(self):
 
         self.datum = {}  # data by event
-        self.accessor = TestAccessor(store=self, datatype=Data)
+        self.accessor = TestAccessor(store=self)
         self.data = self.accessor.create()
 
     def notify(self, event, data):
@@ -148,18 +151,18 @@ class AccessorTest(UTCase):
         self.assertTrue(self.data.isstored)
         self.assertIn(self.data, self.accessor)
 
-        self.data.desc = ''
+        self.data.description = ''
 
         self.data.save()
         self.assertTrue(self.data.isstored)
 
-        self.data.desc = 'test'
+        self.data.description = 'test'
         self.assertTrue(self.data.isdirty)
         self.accessor.update(data=self.data)
         self.assertTrue(self.data.isdirty)
 
         data = self.accessor[self.data._id]
-        self.assertEqual(data.desc, 'test')
+        self.assertEqual(data.description, 'test')
 
         data.delete()
         self.assertNotIn(data, self.accessor)

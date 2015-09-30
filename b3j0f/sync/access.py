@@ -151,8 +151,11 @@ def getidwpids(_id):
 class Accessor(object):
     """Data accessor.
 
-    Provides method to access to store datum.
+    Provides method to access to store datum which are type of the static
+    __datatype__ class.
     """
+
+    __datatype__ = None  #: static handled data type
 
     ADD = 1  #: add event value.
     UPDATE = 2  #: update event value.
@@ -163,12 +166,11 @@ class Accessor(object):
     class Error(Exception):
         """Handle Accessor error."""
 
-    def __init__(self, store, datatype):
+    def __init__(self, store):
 
         super(Accessor, self).__init__()
 
         self.store = store
-        self.datatype = datatype
 
     def __getitem__(self, key):
 
@@ -226,20 +228,37 @@ class Accessor(object):
 
         return self.get(_id=_id, pids=pids)
 
-    def get(self, _id, pids=None):
-        """Get a data from _id and parent ids.
+    def get(self, _id, pids=None, globalid=None):
+        """Get a data from _id, parent ids or globalid.
 
         :param str _id: data id to retrieve.
         :param list pids: list of parent data ids.
+        :param str globalid: data global id.
         :return: Data which corresponds to input _id and pids.
         :rtype: Data
         """
 
         raise NotImplementedError()
 
-    def find(self, ids=None, descs=None, created=None, updated=None, **kwargs):
+    def getbyname(self, name, pnames=None, globalname=None):
+        """Get the first data corresponding with name and pnames or globalname.
+
+        :param str name: data name to retrieve.
+        :param list pnames: list of parent data names.
+        :param str globalname: data global name.
+        :return: First Data which corresponds to input name and pnames.
+        :rtype: Data
+        """
+
+        raise NotImplementedError()
+
+    def find(
+            self, name=None, ids=None, descs=None, created=None, updated=None,
+            **kwargs
+    ):
         """Find datum which match input parameters.
 
+        :param str name: data name to find.
         :param list ids: data names to retrieve.
         :param list descs: list of regex to find in data description.
         :param datetime created: minimum data creation date time.
@@ -283,7 +302,7 @@ class Accessor(object):
         :rtype: Data
         """
 
-        result = self.datatype(accessor=self, **kwargs)
+        result = self.__datatype__(accessor=self, **kwargs)
 
         return result
 
@@ -322,6 +341,9 @@ class Accessor(object):
         :raises: Accessor.Error if data does not exist or is not updatable.
         """
 
+        if data.accessor != self:  # resolve local data id and pids
+            data = self.getbyname(name=data.name, pnames=data.pnames)
+
         return self._process(
             data=data, process=self._update, notify=notify, old=old,
             event=Accessor.UPDATE
@@ -349,6 +371,9 @@ class Accessor(object):
         :rtype: Data
         :raises: Accessor.Error if data does not exist or is not deletable.
         """
+
+        if data.accessor != self:  # resolve local data id and pids
+            data = self.getbyname(name=data.name, pnames=data.pnames)
 
         self._process(
             data=data, process=self._remove, notify=notify,

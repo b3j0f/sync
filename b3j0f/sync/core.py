@@ -26,13 +26,16 @@
 
 """Synchronizer module."""
 
-from b3j0f.conf import ConfigurableRegistry, Parameter, add_category
+from b3j0f.conf import (
+    ConfigurableRegistry, Parameter, add_category, conf_paths
+)
 from b3j0f.sync.store import Store
 from b3j0f.sync.access import Accessor
 
 __all__ = ['Synchronizer']
 
 
+@conf_paths('sync.conf')
 @add_category('SYNC', [Parameter('stores')])
 class Synchronizer(ConfigurableRegistry):
     """In charge of synchronizing Stores.

@@ -33,7 +33,7 @@ from random import randint
 
 from datetime import datetime
 
-from b3j0f.sync.access import getidwpids
+from b3j0f.sync.access import getidwpids, getglobalid
 from b3j0f.utils.property import addproperties
 
 
@@ -81,14 +81,15 @@ def datafields(*fields):
     return addproperties(names=fields, bfset=_setfield, bfdel=_delfield)
 
 
-@datafields('_id', 'desc', 'created', 'updated')
+@datafields('_id', 'name', 'description', 'created', 'updated')
 class Data(object):
     """Store data.
 
     A Data is related to an accessor and contains following properties:
 
     - _id: unique data id in the accessor.
-    - desc: data description.
+    - name: global name for all stores.
+    - description: data description.
     - created: date time creation (default now).
     - updated: date time updating (default now).
     """
@@ -98,12 +99,15 @@ class Data(object):
 
     def __init__(
             self,
-            accessor, _id=None, desc=None, created=None, updated=None
+            accessor,
+            _id=None, name=None, description=None, created=None, updated=None
     ):
         """
         :param Accessor accessor: creation accessor.
         :param str _id: data id. Generated in [1; 2^32-1] by default.
-        :param str description: data description.
+        :param str name: data name for best effort reasons, it could be used
+            instead of _id beceause most stores do not allow to set data id.
+        :param str description: data description. _id by default.
         :param datetime created: data date time creation.
         :param datetime updated: data date time updating.
         """
@@ -114,7 +118,9 @@ class Data(object):
 
         # set protected attributes
         setattr(self, '__id', str(randint(1, 2**32-1) if _id is None else _id))
-        self._desc = desc
+        # name is self._id by default
+        self._name = self._id if name is None else name
+        self._description = description
         self._created = datetime.now() if created is None else created
         self._updated = datetime.now() if updated is None else updated
 
@@ -123,15 +129,79 @@ class Data(object):
 
     def __hash__(self):
 
-        return hash(getattr(self, '__id'))
+        return hash(self.globalname)
 
     def __cmp__(self, other):
 
-        return hash(self._id).__cmp__(hash(other._id))
+        return hash(self).__cmp__(hash(other))
 
     def __eq__(self, other):
 
-        return self._id.__eq__(other._id)
+        return self.globalname.__eq__(other.globalname)
+
+    @property
+    def pids(self):
+        """Get parent ids which depend on the nature of this.
+
+        :return: parent ids. Default None.
+        :rtype: list
+        """
+
+        return self._pids()
+
+    def _pids(self):
+        """Method to override in order to specify parent ids.
+
+        :return: parent ids. Default None.
+        :rtype: list
+        """
+
+        return None
+
+    @property
+    def globalid(self):
+        """Get global id.
+
+        :return: this global id.
+        :rtype: str
+        """
+
+        result = getglobalid(_id=self._id, pids=self.pids)
+
+        return result
+
+    @property
+    def pnames(self):
+        """Get parent names which depend on the nature of this.
+
+        :return: parent names. Default None.
+        :rtype: list
+        """
+
+        return self._pnames()
+
+    def _pnames(self):
+        """Method to override in order to specify parent names.
+
+        :return: parent names. Default None.
+        :rtype: list
+        """
+
+        return None
+
+    @property
+    def globalname(self):
+        """Get global name for interoperability reasons (beceause some stores
+        do not allow to set/modify the data id) if a data exists in a composite
+        way.
+
+        :return: this global name.
+        :rtype: str
+        """
+
+        result = getglobalid(_id=self.name, pids=self.pnames)
+
+        return result
 
     @property
     def isdirty(self):

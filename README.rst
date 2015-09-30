@@ -67,7 +67,19 @@ The global architecture is composed of four classes:
 - Synchronizer: class which is linked to several stores in order to propagate data CRUD operations on these last ones.
 - Store: class which represents a set of data, and uses one Accessor per data type in order to access to self data.
 - Accessor: class which permits to access and create data.
-- Data: data content class which is the abstraction used to exchange data information among stores.
+- Data: specific to an accessor, it is the abstraction class used to exchange data information among stores.
+
+Therefore, one Store can be used by several synchronizers, and one Accessor can be used by several Stores.
+
+The Synchronizer and the Store are configurables (see `b3j0f.conf`_), while the Store, the Accessor and the Data are abstract classes.
+
+If you want to specialize this system to your own needs, you have to extend abstract classes with implementation of 6 CRUD methods for the Accessor.
+
+The system does not use semantical mechanisms, therefore, the system is in a **best effort** mode instead to be exhaustive.
+
+Example::
+
+   `b3j0f.dmts`_: development management tool synchronizer.
 
 Perspectives
 ============
@@ -85,3 +97,6 @@ Donation
 .. _Homepage: https://github.com/b3j0f/sync
 .. _Documentation: http://b3j0fsync.readthedocs.org/en/master/
 .. _PyPI: https://pypi.python.org/pypi/b3j0f.sync/
+
+.. _`b3j0f.conf`: https://github.com/b3j0f/conf
+.. _`b3j0f.dmts`: https://github.com/b3j0f/dmts

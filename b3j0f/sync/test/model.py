@@ -80,7 +80,7 @@ class DataTest(UTCase):
 
         self.assertNotEqual(self.data, data)
 
-        self.data._id = data._id
+        self.data.name = data.name
 
         self.assertEqual(self.data, data)
 
@@ -95,13 +95,13 @@ class DataTest(UTCase):
 
         self.assertFalse(self.data.isdirty)
 
-        self.data.desc = ''
+        self.data.description = ''
         self.assertTrue(self.data.isdirty)
 
         self.data.rollback()
         self.assertFalse(self.data.isdirty)
 
-        self.data.desc = ''
+        self.data.description = ''
         self.assertTrue(self.data.isdirty)
 
         self.data.save()

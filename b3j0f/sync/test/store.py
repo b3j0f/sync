@@ -296,7 +296,7 @@ class CRUDTest(_HandlerTest):
         self.assertTrue(self.data.isstored)
         self.assertIn(self.data, self.store)
 
-        self.data.desc = ''
+        self.data.description = ''
 
         self.data.save()
         self.assertTrue(self.data.isstored)
@@ -305,7 +305,7 @@ class CRUDTest(_HandlerTest):
             {Accessor.ADD: [self.data], Accessor.UPDATE: [self.data]}
         )
 
-        self.data.desc = 'test'
+        self.data.description = 'test'
         self.assertTrue(self.data.isdirty)
         self.store.update(data=self.data)
         self.assertTrue(self.data.isdirty)
@@ -318,7 +318,7 @@ class CRUDTest(_HandlerTest):
         )
 
         data = self.store[self.data._id]
-        self.assertEqual(data.desc, 'test')
+        self.assertEqual(data.description, 'test')
 
         data.delete()
         self.assertNotIn(data, self.store)

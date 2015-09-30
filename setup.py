@@ -36,7 +36,10 @@ from os.path import abspath, dirname, join
 with open(join(dirname(abspath(__file__)), 'README.rst')) as f:
     DESC = f.read()
 
-KEYWORDS = ['utils', 'tools', 'development', 'synchronizer', 'design pattern']
+KEYWORDS = [
+    'utils', 'tools', 'development', 'synchronizer', 'design pattern',
+    'sync', 'observer', 'model', 'interoperability'
+]
 
 DEPENDENCIES = ['b3j0f.conf', 'b3j0f.utils']
 
@@ -44,7 +47,7 @@ DESCRIPTION = 'Synchronizer design pattern library'
 
 setup(
     name='b3j0f.sync',
-    version='0.0.1',
+    version='0.0.3',
     packages=find_packages(exclude=['test.*', '*.test.*']),
     author='b3j0f',
     author_email='jlabejof@yahoo.fr',

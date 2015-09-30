@@ -29,7 +29,7 @@
 from b3j0f.utils.version import basestring
 from b3j0f.utils.path import lookup
 from b3j0f.utils.iterable import ensureiterable
-from b3j0f.conf import Configurable, Parameter, add_category
+from b3j0f.conf import Configurable, Parameter, add_category, conf_paths
 from b3j0f.sync.model import Data
 from b3j0f.sync.access import Accessor, getidwpids
 
@@ -51,6 +51,7 @@ class _MetaStore(Configurable.__metaclass__):
         return result
 
 
+@conf_paths('store.conf')
 @add_category('STORE', Parameter('accessors', parser=Parameter.dict))
 class Store(Configurable):
     """Abstract class in charge of accessing to datum."""
@@ -399,7 +400,7 @@ class Store(Configurable):
         result = None
 
         for accessor in self.accessors.values():
-            if accessor.datatype == datatype:
+            if accessor.__datatype__ == datatype:
                 result = accessor
                 break
         else:
