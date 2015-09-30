@@ -30,7 +30,7 @@
 
 from setuptools import setup, find_packages
 
-from os.path import abspath, dirname, join
+from os.path import abspath, dirname, join, expanduser
 
 # get long description from setup directory abspath
 with open(join(dirname(abspath(__file__)), 'README.rst')) as f:
@@ -77,5 +77,10 @@ setup(
     ],
     test_suite='b3j0f',
     keywords=KEYWORDS,
-    data_files=[('~/etc/b3j0f.sync/', ['etc/store.conf'])]
+    data_files=[
+        (
+            expanduser('~/etc/'),
+            ['etc/b3j0fsync-store.conf', 'etc/b3j0fsync-synchronizer.conf']
+        )
+    ]
 )
