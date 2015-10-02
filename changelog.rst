@@ -7,6 +7,7 @@ ChangeLog
 - clean code and refactor most complex parts.
 - rename store.handlers to store.observers and improve their management with event filtering. Data filtering will be implemented in the future version.
 - add limitation about data names.
+- fix bugs in the Store.find method.
 
 0.0.2 (2015/10/02)
 ------------------

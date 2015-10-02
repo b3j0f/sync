@@ -545,11 +545,20 @@ class Store(Configurable):
         else:
             accessors = self._accessors.keys()
 
+        # init kwargs
+        if ids:
+            kwargs['ids'] = ids
+        if descs:
+            kwargs['descs'] = ids
+        if created:
+            kwargs['created'] = created
+        if updated:
+            kwargs['updated'] = updated
+
         for accessor in accessors:
-            accessor = self._accessors[accessor]
-            elts = accessor.find(
-                ids=ids, descs=descs, created=created, updated=updated
-            )
+            accessor = self.accessors[accessor]
+
+            elts = accessor.find(**kwargs)
             result += elts
 
         return result
