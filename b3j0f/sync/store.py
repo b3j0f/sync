@@ -371,9 +371,9 @@ class Store(Configurable):
         if isinstance(key, Data):
             key = key._id
 
-        _id, pids = getidwpids(key)
+        _id, pids = getidwpids(globalid=key)
 
-        return self.get(_id=key, pids=pids)
+        return self.get(_id=_id, pids=pids)
 
     def __setitem__(self, key, item):
 
@@ -454,17 +454,22 @@ class Store(Configurable):
 
         return result
 
-    def get(self, _id, accessor=None, pids=None):
+    def get(self, _id, accessor=None, pids=None, globalid=None):
         """Get data by id and type.
 
         :param int _id: data id.
-        :param str accessor: accessor name to use.
+        :param str accessor: accessor name to use. By default, return the first
+            data where _id exists in any accessor.
         :param str pids: parent data ids if exist.
+        :param str globalid: global id.
         :return: data which corresponds to input _id and _type.
         :rtype: Data
         """
 
         result = None
+
+        if globalid is not None:
+            _id, pids = getidwpids(globalid=globalid)
 
         if accessor is None:  # get the first data which corresponds to params
             for accessor in self._accessors:
@@ -477,6 +482,39 @@ class Store(Configurable):
         else:
             result = self._processdata(  # get specific accessor data
                 process='get', _id=_id, pids=pids, accessor=accessor
+            )
+
+        return result
+
+    def getbyname(self, name, pnames=None, globalname=None, accessor=None):
+        """Get the first data corresponding with name and pnames or globalname.
+
+        :param str accessor: accessor name to use.
+        :param str name: data name to retrieve.
+        :param list pnames: list of parent data names.
+        :param str globalname: data global name.
+        :return: First Data which corresponds to input name and pnames.
+        :rtype: Data
+        """
+
+        result = None
+
+        if globalname is not None:
+            name, pnames = getidwpids(globalid=globalname)
+
+        if accessor is None:  # get the first data which corresponds to params
+            for accessor in self._accessors:
+                result = self._processdata(
+                    process='getbyname', name=name, pnames=pnames,
+                    accessor=accessor
+                )
+                if result is not None:  # if result is not None, leave the loop
+                    break
+
+        else:
+            result = self._processdata(  # get specific accessor data
+                process='getbyname', name=name, pnames=pnames,
+                accessor=accessor
             )
 
         return result
@@ -525,6 +563,18 @@ class Store(Configurable):
         """
 
         return self._processdata(accessor=accessor, process='create', **kwargs)
+
+    def sdata2data(self, accessor, sdata):
+        """Create a data from a stored data.
+
+        :param dict sdata: data in the store data format.
+        :return: Data conversion from a store data.
+        :rtype: Data
+        """
+
+        return self._processdata(
+            accessor=accessor, process='sdata2data', sdata=sdata
+        )
 
     def add(self, data, accessor=None, notify=True):
         """Add input data.

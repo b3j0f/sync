@@ -28,7 +28,7 @@
 
 __all__ = ['getglobalid', 'getidwpids', 'Accessor']
 
-separator_char = '::'  #: global id character separator.
+SEPARATOR_CHAR = '::'  #: global id character separator.
 
 from b3j0f.utils.version import basestring
 
@@ -53,8 +53,8 @@ def getglobalid(_id, pids=None):
 
     count = len(result)
 
-    for index, pid in enumerate(pids):
-        result = '{0}{1}{2}{1}{3}'.format(result, separator_char, count, pid)
+    for pid in pids:
+        result = '{0}{1}{2}{1}{3}'.format(result, SEPARATOR_CHAR, count, pid)
         count = len(pid)
 
     return result
@@ -70,8 +70,8 @@ def _getcountvaluepid(count, currentid, lastid):
     :rtype: tuple
     """
 
-    count += len(separator_char)  # let's add separator_char len
-    currentid = '{0}{1}{2}'.format(currentid, separator_char, lastid)
+    count += len(SEPARATOR_CHAR)  # let's add SEPARATOR_CHAR len
+    currentid = '{0}{1}{2}'.format(currentid, SEPARATOR_CHAR, lastid)
 
     return count, currentid
 
@@ -92,18 +92,18 @@ def _updatelocalidpids(localid, pids, currentid):
     return localid
 
 
-def getidwpids(_id):
-    """Get the local id with pids related to an id which can be composed of
-    parent ids.
+def getidwpids(globalid):
+    """Get the local id with pids related to a global id which can be composed
+    of parent ids.
 
     Inverse of the getglobalid function.
 
-    :param str _id: global id from where get a local id.
+    :param str globalid: global id from where get a local id.
     :return: local data id and an array with data parent ids.
     :rtype: tuple
     """
 
-    ids = _id.split(separator_char)  # split with separation char
+    ids = globalid.split(SEPARATOR_CHAR)  # split with separation char
 
     # result is localid and pids
     localid = None
@@ -177,7 +177,7 @@ class Accessor(object):
         if not isinstance(key, basestring):
             key = key._id
 
-        _id, pids = getidwpids(key)
+        _id, pids = getidwpids(globalid=key)
 
         result = self.get(_id=_id, pids=pids)
 
@@ -191,7 +191,7 @@ class Accessor(object):
         old = key
 
         if isinstance(old, basestring):
-            _id, pids = getidwpids(old)
+            _id, pids = getidwpids(globalid=old)
             old = self.get(_id=_id, pids=pids)
 
         self.update(data=value, old=old)
@@ -201,7 +201,7 @@ class Accessor(object):
         data = key
 
         if isinstance(data, basestring):
-            _id, pids = getidwpids(data)
+            _id, pids = getidwpids(globalid=data)
             data = self.get(_id=_id, pids=pids)
 
         self.remove(data=data)
@@ -224,7 +224,7 @@ class Accessor(object):
 
     def __contains__(self, other):
 
-        _id, pids = getidwpids(other._id)
+        _id, pids = getidwpids(globalid=other._id)
 
         return self.get(_id=_id, pids=pids)
 
@@ -305,6 +305,16 @@ class Accessor(object):
         result = self.__datatype__(accessor=self, **kwargs)
 
         return result
+
+    def sdata2data(self, sdata):
+        """Create a data from a stored data.
+
+        :param dict sdata: data in the store data format.
+        :return: Data conversion from a store data.
+        :rtype: Data
+        """
+
+        raise NotImplementedError()
 
     def add(self, data, notify=True):
         """Add a data from this store.

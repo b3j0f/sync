@@ -48,6 +48,9 @@ class DataTest(UTCase):
     def get(*args, **kwargs):
         """Emulate the accessor.get method."""
 
+    def getbyname(*args, **kwargs):
+        """Emulate the accessor.getbyname method."""
+
     def add(*args, **kwargs):
         """Emulate the accessor.add method."""
 

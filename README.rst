@@ -82,9 +82,21 @@ Examples
 
 - `b3j0f.dmts`_: development management tool synchronizer.
 
+Limitations
+===========
+
+Name limitation
+---------------
+
+In order to ensure data consistency among several stores, the system choose to find any data from its name and context name (aka, name of embedding data).
+
+Therefore, this system is not able to synchronize data which are of the same type of other data, in the same context, and with the same name.
+
 Perspectives
 ============
 
+- break the `name limitation`_ with a store dedicated to ensure correspondance between store data ids.
+- use a data id of type int instead of type str, for memory reasons.
 - wait feedbacks during 6 months before passing it to a stable version.
 - Cython implementation.
 

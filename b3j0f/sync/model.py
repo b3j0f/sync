@@ -47,9 +47,7 @@ def _updatefield(data, field):
     :param str field: data field name to update.
     """
     if field not in data._updatedfields:
-        data._updatedfields[field] = getattr(
-            data, '_{0}'.format(field)
-        )
+        data._updatedfields[field] = getattr(data, '_{0}'.format(field))
         data.updated = datetime.now()  # update updated field
 
 
@@ -57,7 +55,7 @@ def _delfield(self, name):
     _updatefield(data=self, field=name)
 
 
-def _setfield(self, value, name):
+def _setfield(self, _, name):
     """Set data field with input value.
 
     :param Data self: data instance.
@@ -240,12 +238,18 @@ class Data(object):
         :raises: Accessor.Error in case of saving error.
         """
 
-        _id, pids = getidwpids(_id=self._id)
-        old = self.accessor.get(_id=_id, pids=pids)
+        old = self.accessor.get(_id=self._id, pids=self.pids)
 
         if old is None:
+            # try to get old by name because two elements can not have the same
+            # name in the same scope in this system.
+            old = self.accessor.getbyname(name=self.name, pnames=self.pnames)
+
+        if old is None:  # if old is still None, add
             self.accessor.add(data=self, notify=notify)
+
         else:
+            self._id = old._id  # update id if old has been found by name
             self.accessor.update(data=self, old=old, notify=notify)
 
         self._updatedfields.clear()  # finish to clear data

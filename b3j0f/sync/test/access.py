@@ -31,7 +31,7 @@ from unittest import main
 
 from b3j0f.utils.ut import UTCase
 
-from ..access import Accessor, getglobalid, getidwpids, separator_char
+from ..access import Accessor, getglobalid, getidwpids, SEPARATOR_CHAR
 from ..model import Data
 
 
@@ -49,6 +49,10 @@ class TestAccessor(Accessor):
     def get(self, _id, pids=None):
 
         return self.datum.get(_id)
+
+    def getbyname(self, name, pnames=None):
+
+        return self.datum.get(name)
 
     def find(self, ids=None, descs=None, created=None, updated=None):
 
@@ -175,7 +179,7 @@ class TestGetIdwPids(UTCase):
         """Test with a simple id."""
 
         test_id = 'test'
-        _id, pids = getidwpids(_id=test_id)
+        _id, pids = getidwpids(globalid=test_id)
 
         self.assertEqual(_id, test_id)
         self.assertFalse(pids)
@@ -183,9 +187,9 @@ class TestGetIdwPids(UTCase):
     def test_id_w_sep(self):
         """Test with an _id and wrong separator char."""
 
-        test_id = 'test{0}'.format(separator_char)
+        test_id = 'test{0}'.format(SEPARATOR_CHAR)
 
-        _id, pids = getidwpids(_id=test_id)
+        _id, pids = getidwpids(globalid=test_id)
 
         self.assertEqual(_id, test_id)
         self.assertFalse(pids)
@@ -196,22 +200,22 @@ class TestGetIdwPids(UTCase):
         """
 
         test_id = 'test{0}10{0}8{0}rt{0}2{0}fgt{0}fr{0}'.format(
-            separator_char
+            SEPARATOR_CHAR
         )
 
-        _id, pids = getidwpids(_id=test_id)
+        _id, pids = getidwpids(globalid=test_id)
 
-        self.assertEqual(_id, 'test{0}10'.format(separator_char))
-        self.assertEqual(pids, ['rt', 'fgt{0}fr{0}'.format(separator_char)])
+        self.assertEqual(_id, 'test{0}10'.format(SEPARATOR_CHAR))
+        self.assertEqual(pids, ['rt', 'fgt{0}fr{0}'.format(SEPARATOR_CHAR)])
 
     def test_reverse(self):
         """Test in reversing getglobalid parameters."""
 
         test_id = 'test{0}10{0}8{0}rt{0}2{0}fgt{0}fr{0}'.format(
-            separator_char
+            SEPARATOR_CHAR
         )
 
-        _id, pids = getidwpids(_id=test_id)
+        _id, pids = getidwpids(globalid=test_id)
         globalid = getglobalid(_id=_id, pids=pids)
 
         self.assertEqual(test_id, globalid)
@@ -237,7 +241,7 @@ class TestGetGlobalId(UTCase):
         globalid = getglobalid(_id=test_id, pids=pids)
 
         idtotest = '{0}{1}{4}{1}{2}{1}{5}{1}{3}'.format(
-            test_id, separator_char, pids[0], pids[1],
+            test_id, SEPARATOR_CHAR, pids[0], pids[1],
             len(test_id), len(pids[0])
         )
         self.assertEqual(globalid, idtotest)
