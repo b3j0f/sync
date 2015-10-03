@@ -102,7 +102,7 @@ class Store(Configurable):
         :rtype: list
         """
 
-        return self._accessors.values()
+        return tuple(self._accessors.values())
 
     @accessors.setter
     def accessors(self, value):
