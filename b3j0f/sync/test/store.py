@@ -138,10 +138,7 @@ class AccessorsTest(StoreTest):
 
         count = 5
 
-        accessors = []
-
-        for i in range(count):
-            accessors.append(accessorname)
+        accessors = [accessorname for _ in range(count)]
 
         self.store.accessors = accessors
 
@@ -156,10 +153,7 @@ class AccessorsTest(StoreTest):
 
         accessor = TestAccessor(store=self)
 
-        accessors = []
-
-        for i in range(count):
-            accessors.append(accessor)
+        accessors = [accessor for _ in range(count)]
 
         self.store.accessors = accessors
 
