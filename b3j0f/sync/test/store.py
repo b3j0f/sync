@@ -144,7 +144,6 @@ class AccessorsTest(StoreTest):
 
         storeaccessors = self.store.accessors
         self.assertEqual(len(storeaccessors), 1)
-        print(storeaccessors)
         self.assertTrue(isinstance(storeaccessors[0], TestAccessor))
 
     def test_instances(self):
