@@ -61,7 +61,10 @@ class _MetaStore(Configurable.__metaclass__):
     ]
 )
 class Store(Configurable):
-    """Abstract class in charge of accessing to datum."""
+    """Abstract class in charge of accessing to datum.
+
+    A Store uses Accessors in order to access to data by types.
+    """
 
     class Error(Exception):
         """Handle store errors."""
@@ -79,7 +82,7 @@ class Store(Configurable):
             creation/modification/deletion.
         :param bool autoconnect: if True, connect this at the end of this
             execution.
-        :param dict accessors: Data accessors by name.
+        :param list accessors: Data accessors.
         """
 
         super(Store, self).__init__(*args, **kwargs)
@@ -96,30 +99,28 @@ class Store(Configurable):
     def accessors(self):
         """Get accessors.
 
-        :rtype: dict
+        :rtype: list
         """
 
-        return self._accessors
+        return self._accessors.values()
 
     @accessors.setter
     def accessors(self, value):
-        """Change of accessors by name.
+        """Change of accessors.
 
-        :param dict value: value of accessors. Values can be str or Accessor
-            classes or even Accessor instances. In first two cases, final
-            accessor values will tried to be resolved and instantiated with
-            this such as the ``store`` paramater.
+        :param list value: values of accessors. Each Value can be str or
+            Accessor classe or even Accessor instance. In first two cases,
+            final accessor values will tried to be resolved and instantiated
+            with this such as the ``store`` paramater.
+        :type value: str(s), type(s) or Accessor(s)
         :raises: Store.Error if value is not a dict.
         """
 
-        if value is None:
+        self._accessors.clear()
 
-            self._accessors.clear()
+        if value is not None:
 
-        elif isinstance(value, dict):
-
-            for name in value:
-                accessor = value[name]
+            for index, accessor in enumerate(value):
 
                 if isinstance(accessor, basestring):
                     accessor = lookup(accessor)(store=self)
@@ -128,19 +129,15 @@ class Store(Configurable):
                     accessor = accessor(store=self)
 
                 if isinstance(accessor, Accessor):
-                    self._accessors[name] = accessor
+                    # save accessor by datatype
+                    self._accessors[accessor.__datatype__] = accessor
 
                 else:
-                    raise Accessor.Error(
-                        'Wrong accessor value at {0} in {1}.'.format(
-                            name, value
-                        )
-                    )
+                    wrong_values = 'Wrong accessor value at {0} in {1}'
+                    expected = 'str, Accessor class or instance expected'
+                    error_msg = '{0}. {1}.'.format(wrong_values, expected)
 
-        else:
-            raise Store.Error(
-                'Wrong value {0}. dict expected'.format(value)
-            )
+                    raise Accessor.Error(error_msg.format(index, value))
 
     def addobserver(self, observer, event=Accessor.ALL):
         """Add an observer related to input event.
@@ -149,14 +146,14 @@ class Store(Configurable):
         :param int event: listening observer event. Default is ALL.
         """
 
-        def _addobserver(_event):
+        def _addobserver(flag):
+            """Local function which add observer by event flag."""
+            if event & flag:
+                self.observers.setdefault(flag, set()).add(observer)
 
-            if event & _event:
-                self.observers.setdefault(_event, set()).add(observer)
-
-        _addobserver(Accessor.ADD)  # add for ADD events
-        _addobserver(Accessor.UPDATE)  # add for UPDATE events
-        _addobserver(Accessor.REMOVE)  # add for REMOVE events
+        _addobserver(flag=Accessor.ADD)  # add for ADD events
+        _addobserver(flag=Accessor.UPDATE)  # add for UPDATE events
+        _addobserver(flag=Accessor.REMOVE)  # add for REMOVE events
 
     def removeobserver(self, observer, event=Accessor.ALL):
         """Remove an observer related to input event.
@@ -165,18 +162,19 @@ class Store(Configurable):
         :param int event: stop listening observer event.
         """
 
-        def _removeobserver(_event):
+        def _removeobserver(flag):
+            """Local function which remove an observer by a global event."""
 
-            if event & _event:  # if _event matches
-                observers = self.observers.get(_event)  # get observers
+            if event & flag:  # if flag matches
+                observers = self.observers.get(flag)  # get observers
                 if observers:  # if observers is not empty
                     observers.remove(observer)  # remove the observer
                     if not observers:  # if observers[event] is empty
-                        del self.observers[_event]  # remove it from observers
+                        del self.observers[flag]  # remove it from observers
 
-        _removeobserver(Accessor.ADD)  # remove for ADD events
-        _removeobserver(Accessor.UPDATE)  # remove for UPDATE events
-        _removeobserver(Accessor.REMOVE)  # remove for REMOVE events
+        _removeobserver(flag=Accessor.ADD)  # remove for ADD events
+        _removeobserver(flag=Accessor.UPDATE)  # remove for UPDATE events
+        _removeobserver(flag=Accessor.REMOVE)  # remove for REMOVE events
 
     def connect(self):
         """Connect to the remote data with self attributes."""
@@ -395,38 +393,18 @@ class Store(Configurable):
 
         self.remove(data=data)
 
-    def _getaccessor(self, datatype):
-        """Get an accessor by data type.
-
-        :param type datatype: Data type covered by the accessor.
-        :return: related data type accessor.
-        :rtype: Accessor
-        :raises: Store.Error if no related accessor exist.
-        """
-
-        result = None
-
-        for accessor in self.accessors.values():
-            if accessor.__datatype__ == datatype:
-                result = accessor
-                break
-        else:
-            raise Store.Error(
-                'No accessor for {0} available'.format(datatype)
-            )
-
-        return result
-
-    def _processdata(self, process, data=None, accessor=None, **kwargs):
-        """Process input data with input accessor process function name and
+    def _processdata(self, process, data=None, datatype=None, **kwargs):
+        """Process input data with a specific accessor process function and
             event notification in case of success. The process successes if its
             result is an Data.
+
+        The accessor corresponds to input datatype if data is None, or
+        type(data) if data is given, or else the first accessor which gives
 
         :param Data data: data to process.
         :param process: accessor processing function. Takes in parameter
             input data and returns an data if processing succeed.
-        :param str accessor: accessor name to use. By default, find the best
-            accessor able to process data.
+        :param datatype: related data type (fullname) to use.
         :param kwargs: additional processing parameters.
         :return: process data result.
         :rtype: Data
@@ -435,31 +413,64 @@ class Store(Configurable):
 
         result = None
 
-        if accessor is None:
-            accessor = self._getaccessor(datatype=type(data))
+        accessors = []  # accessors which will be processed in a best effort
 
-        elif isinstance(accessor, basestring):
-            accessor = self._accessors[accessor]
+        if data is None:
+            if datatype is None:
+                accessors = self._accessors.values()
 
-        if data is not None:  # add data to kwargs if given
-            kwargs['data'] = data
+            else:
+                if isinstance(datatype, basestring):
+                    datatype = lookup(datatype)
 
-        _process = getattr(accessor, process)
+                if not issubclass(datatype, Data):
+                    raise Store.Error('Wrong data type {0}.'.format(datatype))
 
-        try:
-            result = _process(**kwargs)
+                accessor = self._accessors.get(datatype)
+                if accessor is not None:
+                    accessors = [accessor]
 
-        except Accessor.Error as ex:  # embed error in store error
-            raise Store.Error(ex)
+        else:
+            datatype = type(data)
+            kwargs['data'] = data  # add data to kwargs if given
+            accessors = [self._accessors.get(datatype)]
+
+        if process == 'find':
+            results = []
+
+        if accessors:  # do processing only if an accessor is available
+            for accessor in accessors:
+
+                _process = getattr(accessor, process)
+
+                try:
+                    result = _process(**kwargs)
+
+                    # embed error in store error if best effort
+                except Accessor.Error as ex:
+                    if process != 'find':
+                        raise Store.Error(ex)
+
+                else:
+                    if result is not None:
+                        if process == 'find':
+                            results += result
+
+                        else:
+                            break
+
+        if process == 'find':
+            result = results
 
         return result
 
-    def get(self, _id, accessor=None, pids=None, globalid=None):
+    def get(self, _id, datatype=None, pids=None, globalid=None):
         """Get data by id and type.
 
         :param int _id: data id.
-        :param str accessor: accessor name to use. By default, return the first
+        :param datatype: datatype to use. By default, return the first
             data where _id exists in any accessor.
+        :type datatype: str or type.
         :param str pids: parent data ids if exist.
         :param str globalid: global id.
         :return: data which corresponds to input _id and _type.
@@ -471,25 +482,18 @@ class Store(Configurable):
         if globalid is not None:
             _id, pids = getidwpids(globalid=globalid)
 
-        if accessor is None:  # get the first data which corresponds to params
-            for accessor in self._accessors:
-                result = self._processdata(
-                    process='get', _id=_id, pids=pids, accessor=accessor
-                )
-                if result is not None:  # if result is not None, leave the loop
-                    break
-
-        else:
-            result = self._processdata(  # get specific accessor data
-                process='get', _id=_id, pids=pids, accessor=accessor
-            )
+        result = self._processdata(
+            process='get', _id=_id, pids=pids, datatype=datatype
+        )
 
         return result
 
-    def getbyname(self, name, pnames=None, globalname=None, accessor=None):
+    def getbyname(self, name, pnames=None, globalname=None, datatype=None):
         """Get the first data corresponding with name and pnames or globalname.
 
-        :param str accessor: accessor name to use.
+        :param datatype: datatype to use. By default, return the first
+            data where name and pnames exist in any accessor.
+        :type datatype: str or type.
         :param str name: data name to retrieve.
         :param list pnames: list of parent data names.
         :param str globalname: data global name.
@@ -497,118 +501,77 @@ class Store(Configurable):
         :rtype: Data
         """
 
-        result = None
-
-        if globalname is not None:
-            name, pnames = getidwpids(globalid=globalname)
-
-        if accessor is None:  # get the first data which corresponds to params
-            for accessor in self._accessors:
-                result = self._processdata(
-                    process='getbyname', name=name, pnames=pnames,
-                    accessor=accessor
-                )
-                if result is not None:  # if result is not None, leave the loop
-                    break
-
-        else:
-            result = self._processdata(  # get specific accessor data
-                process='getbyname', name=name, pnames=pnames,
-                accessor=accessor
-            )
+        result = self._processdata(
+            process='getbyname', name=name, pnames=pnames,
+            globalname=globalname, datatype=datatype
+        )
 
         return result
 
-    def find(
-            self,
-            ids=None, descs=None, created=None, updated=None, accessors=None,
-            **kwargs
-    ):
+    def find(self, datatype=None, **kwargs):
         """Get a list of datum matching with input parameters.
 
-        :param list ids: data ids to retrieve. If None, get all
-            datum.
-        :param list descs: list of regex to find in data description.
-        :param datetime created: starting creation time.
-        :param datetime updated: starting updated time.
+        :param datatype: final data types to find.
+        :type datatype: str or type
         :param dict kwargs: additional elemnt properties to select.
-        :param list accessors: accessor names to use.
         :return: list of Elements.
         :rtype: list
         """
 
         result = []
 
-        if accessors:
-            accessors = ensureiterable(accessors, exclude=str)
-
-        else:
-            accessors = self._accessors.keys()
-
-        # init kwargs
-        if ids:
-            kwargs['ids'] = ids
-        if descs:
-            kwargs['descs'] = ids
-        if created:
-            kwargs['created'] = created
-        if updated:
-            kwargs['updated'] = updated
-
-        for accessor in accessors:
-            accessor = self.accessors[accessor]
-
-            elts = accessor.find(**kwargs)
-            result += elts
+        result = self._processdata(
+            process='find', datatype=datatype, **kwargs
+        )
 
         return result
 
-    def create(self, accessor, **kwargs):
+    def create(self, datatype, **kwargs):
         """Create a Data related to dataname.
 
-        :param str accessor: accessor name.
-        :type accessor: str or Accessor.
+        :param datatype: datatype to retrieve.
+        :type datatype: str or type.
         :param dict kwargs:
         """
 
-        return self._processdata(accessor=accessor, process='create', **kwargs)
+        result = self._processdata(
+            datatype=datatype, process='create', **kwargs
+        )
 
-    def sdata2data(self, accessor, sdata):
+        return result
+
+    def sdata2data(self, datatype, sdata):
         """Create a data from a stored data.
 
+        :param datatype: final datatype.
+        :type datatype: str or type
         :param dict sdata: data in the store data format.
         :return: Data conversion from a store data.
         :rtype: Data
         """
 
         return self._processdata(
-            accessor=accessor, process='sdata2data', sdata=sdata
+            datatype=datatype, process='sdata2data', sdata=sdata
         )
 
-    def add(self, data, accessor=None, notify=True):
+    def add(self, data, notify=True):
         """Add input data.
 
         :param Data data: data to add.
-        :param str accessor: accessor name to use. By default, find the best
-            accessor able to process data.
         :param bool notify: if True (default), notify observers.
         :return: added data.
         :raises: Store.Error if data already exists or information are
             missing.
         """
 
-        return self._processdata(
-            data=data, notify=notify, process='add', accessor=accessor
-        )
+        return self._processdata(data=data, notify=notify, process='add')
 
-    def update(self, data, accessor=None, old=None, notify=True):
+    def update(self, data, old=None, notify=True):
         """Update input data.
 
         :param Data data: data to update.
-        :param Data old: old data value.
+        :param Data old: old data value. Must be of the same type of data.
         :param bool notify: if True (default), notify observers.
-        :param str accessor: accessor name to use. By default, find the best
-            accessor able to process data.
         :return: updated data.
         :rtype: Data
         :raises: Store.Error if not upsert and data does not exist or
@@ -616,22 +579,17 @@ class Store(Configurable):
         """
 
         return self._processdata(
-            data=data, old=old, notify=notify, process='update',
-            accessor=accessor
+            data=data, old=old, notify=notify, process='update'
         )
 
-    def remove(self, data, notify=True, accessor=None):
+    def remove(self, data, notify=True):
         """Remove input data.
 
         :param Data data: data to delete.
         :param bool notify: if True (default), notify observers.
-        :param str accessor: accessor name to use. By default, find the best
-            accessor able to process data.
         :return: deleted data.
         :rtype: Data
         :raises: Store.Error if data does not exist.
         """
 
-        return self._processdata(
-            data=data, notify=notify, process='remove', accessor=accessor
-        )
+        return self._processdata(data=data, notify=notify, process='remove')

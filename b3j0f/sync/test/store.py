@@ -106,16 +106,30 @@ class StoreTest(UTCase):
 
     def setUp(self):
 
-        self.accessorname = 'data'
         self.datum = {}  # data by event
         self.store = TestStore()
         self.accessor = TestAccessor(store=self.store)
-        self.store.accessors = {self.accessorname: self.accessor}
-        self.data = self.store.create(accessor=self.accessorname)
+        self.store.accessors = [self.accessor]
+        self.data = self.store.create(datatype=TestAccessor.__datatype__)
 
 
 class AccessorsTest(StoreTest):
     """Test accessors setter."""
+
+    def test_no_accessor(self):
+        """Test when no accessor is available to process data."""
+
+        class Test(Data):
+            """Data Test."""
+
+        datum = self.store.find(datatype=Test)
+
+        self.assertFalse(datum)
+
+    def test_no_datatype(self):
+        """Test when data type does not inherit from Data."""
+
+        self.assertRaises(Store.Error, self.store.find, AccessorsTest)
 
     def test_classname(self):
         """Test with accessor values such as class names."""
@@ -124,34 +138,34 @@ class AccessorsTest(StoreTest):
 
         count = 5
 
-        accessors = {}
+        accessors = []
 
         for i in range(count):
-            accessors['data{0}'.format(i)] = accessorname
+            accessors.append(accessorname)
 
         self.store.accessors = accessors
 
-        for i in range(count):
-            accessor = self.store.accessors['data{0}'.format(i)]
-            self.assertTrue(isinstance(accessor, Accessor))
-            self.assertIs(accessor.store, self.store)
+        storeaccessors = self.store.accessors
+        self.assertEqual(len(storeaccessors), 1)
+        self.assertTrue(isinstance(storeaccessors[0], TestAccessor))
 
     def test_instances(self):
         """Test with accessor such as class instances."""
 
         count = 5
 
-        accessors = {}
+        accessor = TestAccessor(store=self)
+
+        accessors = []
 
         for i in range(count):
-            accessors['data{0}'.format(i)] = TestAccessor(store=self.store)
+            accessors.append(accessor)
 
         self.store.accessors = accessors
 
-        for i in range(count):
-            accessor = self.store.accessors['data{0}'.format(i)]
-            self.assertTrue(isinstance(accessor, Accessor))
-            self.assertIs(accessor.store, self.store)
+        storeaccessors = self.store.accessors
+        self.assertEqual(len(storeaccessors), 1)
+        self.assertTrue(isinstance(storeaccessors[0], TestAccessor))
 
 
 class ConnectionTest(StoreTest):
@@ -334,4 +348,4 @@ class CRUDTest(_HandlerTest):
 
 
 if __name__ == '__main__':
-    main()
+    main('CRUDTest.test_cud')
