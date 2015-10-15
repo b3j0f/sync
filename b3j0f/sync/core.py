@@ -37,7 +37,7 @@ __all__ = ['Synchronizer']
 
 
 @conf_paths('sync.conf')
-@add_category('SYNC', [Parameter('stores')])
+@add_category(name='SYNC', content=[Parameter('stores')])
 class Synchronizer(ConfigurableRegistry):
     """In charge of synchronizing Stores.
     """
@@ -124,13 +124,24 @@ class Synchronizer(ConfigurableRegistry):
         """Synchronize stores.
 
         :param Data(s) data: data to synchronize.
-        :param Store(s) store: store to synchronize. Default
+        :param Store(s) store: store to synchronize.
         """
 
-        events = Accessor.ADD | Accessor.UPDATE
+        datum = set()
 
         for store in self.stores:
 
             for data in store:
 
-                self._trigger(data=data, store=store, event=events)
+                if data in datum:
+                    continue
+
+                else:
+                    datum.add(data)
+
+            for _store in self.stores:
+
+                _data = _store.getbyname(name=data.name, pnames=data.pnames)
+
+                if _data:
+                    data.save(accessor=_data.accessor)

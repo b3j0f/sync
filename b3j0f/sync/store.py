@@ -28,7 +28,6 @@
 
 from b3j0f.utils.version import basestring
 from b3j0f.utils.path import lookup
-from b3j0f.utils.iterable import ensureiterable
 from b3j0f.conf import Configurable, Parameter, add_category, conf_paths
 
 from .model import Data
@@ -54,9 +53,9 @@ class _MetaStore(Configurable.__metaclass__):
 
 @conf_paths('store.conf')
 @add_category(
-    'STORE',
-    [
-        Parameter('accessors', parser=Parameter.dict),
+    name='STORE',
+    content=[
+        Parameter('accessors', parser=Parameter.array),
         Parameter('autoconnect', parser=Parameter.bool)
     ]
 )
@@ -123,9 +122,9 @@ class Store(Configurable):
             for index, accessor in enumerate(value):
 
                 if isinstance(accessor, basestring):
-                    accessor = lookup(accessor)(store=self)
+                    accessor = lookup(accessor)
 
-                elif isclass(accessor):
+                if isclass(accessor):
                     accessor = accessor(store=self)
 
                 if isinstance(accessor, Accessor):
@@ -139,38 +138,52 @@ class Store(Configurable):
 
                     raise Accessor.Error(error_msg.format(index, value))
 
-    def addobserver(self, observer, event=Accessor.ALL):
+    def addobserver(self, observer, event=Accessor.ALL, datatype=None):
         """Add an observer related to input event.
 
         :param observer: observer to add.
         :param int event: listening observer event. Default is ALL.
+        :param type datatype: related datatype. sub class of Data.
         """
 
         def _addobserver(flag):
             """Local function which add observer by event flag."""
             if event & flag:
-                self.observers.setdefault(flag, set()).add(observer)
+                observersperdatatype = self.observers.setdefault(flag, {})
+                observers = observersperdatatype.setdefault(datatype, set())
+                observers.add(observer)
 
         _addobserver(flag=Accessor.ADD)  # add for ADD events
         _addobserver(flag=Accessor.UPDATE)  # add for UPDATE events
         _addobserver(flag=Accessor.REMOVE)  # add for REMOVE events
 
-    def removeobserver(self, observer, event=Accessor.ALL):
+    def removeobserver(self, observer, event=Accessor.ALL, datatype=None):
         """Remove an observer related to input event.
 
         :param observer: observer to remove.
         :param int event: stop listening observer event.
+        :param type datatype: related datatype. sub class of Data.
         """
 
         def _removeobserver(flag):
             """Local function which remove an observer by a global event."""
 
             if event & flag:  # if flag matches
-                observers = self.observers.get(flag)  # get observers
-                if observers:  # if observers is not empty
-                    observers.remove(observer)  # remove the observer
-                    if not observers:  # if observers[event] is empty
-                        del self.observers[flag]  # remove it from observers
+                observersperdatatype = self.observers.get(flag)
+
+                if observersperdatatype:
+
+                    if datatype is None:
+                        datatypes = list(observersperdatatype.keys())
+
+                    else:
+                        datatypes = [datatype]
+
+                    for _datatype in datatypes:
+                        observers = observersperdatatype[_datatype]
+                        observers.remove(observer)
+                        if not observers:
+                            del observersperdatatype[_datatype]
 
         _removeobserver(flag=Accessor.ADD)  # remove for ADD events
         _removeobserver(flag=Accessor.UPDATE)  # remove for UPDATE events
@@ -205,11 +218,22 @@ class Store(Configurable):
         raise NotImplementedError()
 
     def notify(self, data, event):
-        """Notify all observers about data creation/modification/deletion."""
+        """Notify all observers about data creation/modification/deletion.
 
-        observers = self.observers.get(event)
+        :param Data data: accessed data to notify.
+        :param int event: event id notification.
+        """
+
+        datatype = type(data)
+
+        observersperdatatype = self.observers.get(event)
+
+        observers = observersperdatatype.get(datatype)  # get observers
 
         if observers:
+            if None in observersperdatatype:  # add observers of all events
+                observers += observersperdatatype[None]
+
             for observer in observers:  # notify all observers
                 observer(data=data, event=event, store=self)
 
@@ -245,18 +269,14 @@ class Store(Configurable):
 
         result = False
 
-        datum = Store._otherdata(other=other)
+        otherdata = Store._otherdata(other=other)
 
-        selfdatum = set(self.find())
-
-        if datum and selfdatum:
-            for data in datum:
-
-                if data not in selfdatum:
+        if otherdata:
+            result = True
+            for data in otherdata:
+                if not self.getbyname(name=data.name, pnames=data.pnames):
+                    result = False
                     break
-
-            else:
-                result = True
 
         return result
 

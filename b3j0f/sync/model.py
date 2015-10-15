@@ -35,7 +35,7 @@ from datetime import datetime
 
 from b3j0f.utils.property import addproperties
 
-from .access import getidwpids, getglobalid
+from .access import getglobalid
 
 __all__ = ['Data', 'datafields']
 
@@ -229,14 +229,18 @@ class Data(object):
 
         self._updatedfields.clear()
 
-    def save(self, notify=True):
+    def save(self, notify=True, accessor=None):
         """Save this Data and synchronize this content with other stores if
         necessary.
 
         :param bool notify: if True (default) synchronize this data with all
             stores.
+        :param Accessor accessor: accessor where save this data.
         :raises: Accessor.Error in case of saving error.
         """
+
+        if accessor is None:  # init accessor
+            accessor = self.accessor
 
         old = self.accessor.get(_id=self._id, pids=self.pids)
 

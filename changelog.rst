@@ -1,6 +1,11 @@
 ChangeLog
 =========
 
+0.0.4 (2015/10/04)
+------------------
+
+- Store accessors is a simple list of Accessors. The Store API is simplified related to only data type, and not accessor in parameters.
+
 0.0.3 (2015/10/03)
 ------------------
 

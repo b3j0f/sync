@@ -209,7 +209,7 @@ html_static_path = ['_static']
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'b3j0futilsdoc'
+htmlhelp_basename = 'b3j0fsyncdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -231,7 +231,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'b3j0futils.tex', u'b3j0f.sync Documentation',
+  (master_doc, 'b3j0fsync.tex', u'b3j0f.sync Documentation',
    u'b3j0f', 'manual'),
 ]
 
@@ -261,7 +261,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'b3j0futils', u'b3j0f.sync Documentation',
+    (master_doc, 'b3j0fsync', u'b3j0f.sync Documentation',
      [author], 1)
 ]
 
@@ -275,8 +275,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'b3j0futils', u'b3j0f.sync Documentation',
-   author, 'b3j0futils', 'One line description of project.',
+  (master_doc, 'b3j0fsync', u'b3j0f.sync Documentation',
+   author, 'b3j0fsync', 'One line description of project.',
    'Miscellaneous'),
 ]
 
