@@ -185,6 +185,9 @@ class Store(Configurable):
                         if not observers:
                             del observersperdatatype[_datatype]
 
+                        if not observersperdatatype:
+                            del self.observers[flag]
+
         _removeobserver(flag=Accessor.ADD)  # remove for ADD events
         _removeobserver(flag=Accessor.UPDATE)  # remove for UPDATE events
         _removeobserver(flag=Accessor.REMOVE)  # remove for REMOVE events
@@ -228,11 +231,12 @@ class Store(Configurable):
 
         observersperdatatype = self.observers.get(event)
 
-        observers = observersperdatatype.get(datatype)  # get observers
+        observers = observersperdatatype.get(datatype, [])  # get observers
+
+        if None in observersperdatatype:
+            observers += observersperdatatype[None]
 
         if observers:
-            if None in observersperdatatype:  # add observers of all events
-                observers += observersperdatatype[None]
 
             for observer in observers:  # notify all observers
                 observer(data=data, event=event, store=self)

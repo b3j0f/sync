@@ -50,11 +50,14 @@ class TestAccessor(Accessor):
 
         return self.datum.get(_id)
 
-    def getbyname(self, name, pnames=None):
+    def getbyname(self, name, pnames=None, globalname=None):
 
         return self.datum.get(name)
 
-    def find(self, ids=None, descs=None, created=None, updated=None):
+    def find(
+            self, name=None, ids=None, descs=None, created=None, updated=None,
+            **kwargs
+    ):
 
         result = []
 

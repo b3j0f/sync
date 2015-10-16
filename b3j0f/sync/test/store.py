@@ -225,11 +225,12 @@ class HandlerTest(_HandlerTest):
 
         self.assertEqual(len(self.store.observers), 1)
         self.assertEqual(len(self.store.observers[event]), 1)
+        self.assertEqual(len(self.store.observers[event][None]), 1)
 
         observer = lambda *args, **kwargs: None
         self.store.addobserver(observer, event=event)
 
-        self.assertEqual(len(self.store.observers[event]), 2)
+        self.assertEqual(len(self.store.observers[event][None]), 2)
 
         self.store.removeobserver(self.observer, event=event)
         self.store.removeobserver(observer, event=event)
