@@ -1,10 +1,9 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2015 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,34 +24,50 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Test the access module."""
-
-from unittest import main
-
-from ..core import Synchronizer
+from .record import Record
 
 
-class TestSynchronizer(Synchronizer):
-    """Test Store implementation."""
+class Accessor(object):
+    """Apply record access rules on stores."""
 
-    def __init__(self, **kwargs):
+    __rtype__ = Record  #: specify record type accessor implementation.
 
-        super(TestSynchronizer, self).__init__(**kwargs)
+    def __hash__(self):
 
-        self.datum = {}  # set of datum by id
+        return hash(self.__rtype__)
 
-    def connect(self):
+    def __eq__(self, other):
 
-        self.connected = True
+        return self.__rtype__ == other
 
-    def disconnect(self):
+    def __cmp__(self, other):
 
-        self.connected = False
+        return cmp(self.__rtype__, other)
 
-    def _isconnected(self):
+    def create(self, store, **fields):
+        """Create a record related to store field values."""
 
-        return self.connected
+    def add(self, store, record):
+        """Add input record in a store"""
 
+        raise NotImplementedError()
 
-if __name__ == '__main__':
-    main()
+    def update(self, store, record):
+        """Update a record in a store."""
+
+        raise NotImplementedError()
+
+    def get(self, store, record):
+        """Get a record from a store."""
+
+        raise NotImplementedError()
+
+    def find(self, store, rtype, **kwargs):
+        """Find records from a store."""
+
+        raise NotImplementedError()
+
+    def remove(self, store, record):
+        """Remove records from a store."""
+
+        raise NotImplementedError()

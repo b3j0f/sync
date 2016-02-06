@@ -24,18 +24,33 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Sync version module.
 
-Define the library version.
-"""
+class FieldDescriptor(object):
+    """Record field descriptor."""
 
-__all__ = ['__version__']
+    def __init__(self, ftype=object, default=None, *args, **kwargs):
 
-# Store the version here so:
-# 1) we don't load dependencies by storing it in __init__.py
-# 2) we can import it in setup.py for the same reason
-# 3) we can import it into the utils module
-# thanks to https://github.com/pycontribs/jira/blob/master/jira/version.py
+        super(FieldDescriptor, self).__init__(*args, **kwargs)
 
-#: project version
-__version__ = '0.1.0'
+        self.ftype = ftype
+        self.default = default
+
+    def getvalue(self, value, name):
+        """Get final value which corresponds to input value or default value if
+        value is None.
+
+        :param value: value to compare with this.
+        :param str name: field name.
+        :raises: TypeError if input value does not match this field type.
+        """
+
+        result = self.default if value is None else value
+
+        if result is not None and not isinstance(value, self.ftype):
+            raise TypeError(
+                'Parameter {0}: {1} does not match {2}'.format(
+                    name, value, self
+                )
+            )
+
+        return result

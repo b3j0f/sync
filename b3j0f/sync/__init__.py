@@ -24,16 +24,12 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Annotation package."""
+"""b3j0f.sync package."""
 
-__all__ = [
-    '__version__',
-    'Synchronizer', 'Data', 'Store', 'Accessor', 'getglobalid', 'getidwpids',
-    'datafields'
-]
+__all__ = ['__version__', 'Store', 'Record', 'Accessor', 'FieldDescriptor']
 
 from .version import __version__
-from .core import Synchronizer
-from .model import Data, datafields
+from .record import Record
 from .store import Store
-from .access import Accessor, getglobalid, getidwpids
+from .accessor import Accessor
+from .field import FieldDescriptor

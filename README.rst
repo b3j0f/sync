@@ -1,7 +1,7 @@
 Description
 ===========
 
-This system is dedicated to help to synchronize data of resources.
+This library is dedicated to ease synchronization of data between resources (database, etc.) at a high level of abstraction.
 
 .. image:: https://img.shields.io/pypi/l/b3j0f.sync.svg
    :target: https://pypi.python.org/pypi/b3j0f.sync/
@@ -62,18 +62,16 @@ pip install b3j0f.sync
 Features
 ========
 
-The global architecture is composed of four classes:
+The global architecture is composed of four classes::
 
-- Synchronizer: class which is linked to several stores in order to propagate data CRUD operations on these last ones.
-- Store: class which represents a set of data, and uses one Accessor per data type in order to access to self data.
-- Accessor: class which permits to access and create data.
-- Data: specific to an accessor, it is the abstraction class used to exchange data information among stores.
+   - Record: pivot data to persist in heterogeneous stores. Keep a transparent reference to stores in order to ensure easy synchronization and consistency among stores.
+   - Store: set of records with accessors. To specialize to a database, CMDB, project management system, etc. depending on your needs.
+   - Accessor: implementation of record CRUD operations in a store.
+   - FieldDescriptor: specify record field type and default value.
 
-Therefore, one Store can be used by several synchronizers, and one Accessor can be used by several Stores.
+If you want to ensure synchronization of data between three
 
-The Synchronizer and the Store are configurables (see `b3j0f.conf`_). Configuration files are installed in the ``~/etc/`` directory.
-
-If you want to specialize this system to your own needs, you have to extend abstract classes with implementation of 6 CRUD methods for the Accessor.
+If you want to use this library to your own needs, you have to extend abstract classes with implementation of 6 CRUD methods for the Accessor.
 
 The system does not use semantical mechanisms, therefore, the system is in a **best effort** mode instead to be exhaustive.
 
