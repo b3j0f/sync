@@ -24,7 +24,12 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-from .record import Record
+"""Store definition module."""
+
+__all__ = ['Store']
+
+from ..record.core import Record
+from ..accessor.registry import AccessorRegistry
 
 
 class Store(object):
@@ -36,15 +41,30 @@ class Store(object):
 
         super(Store, self).__init__(*args, **kwargs)
 
-        self.accessorset = _AccessorSet(accessors=accessors)
+        self.accreg = AccessorRegistry(accessors)
 
-    def create(self, rtype, **fields):
+    @property
+    def accessors(self):
+        """Get accessors."""
+
+        return self.accreg
+
+    @accessors.setter
+    def accessors(self, value):
+        """Change of accessors."""
+
+        self.accreg.clear()
+        self.accreg += value
+
+    def create(self, rtype, fields):
         """Create a record with input type and field values.
 
         :param type rtype: record type.
         :param dict fields: record fields to use in a store context."""
 
-        result = self.accessorset.create(store=self, rtype=rtype, **fields)
+        result = self.accreg.get(rtype).create(
+            store=self, rtype=rtype, fields=fields
+        )
         self.add(record=result)
 
         return result
@@ -57,7 +77,7 @@ class Store(object):
         :param Record record: record to add.
         """
 
-        self.accessorset.add(record=record, store=self)
+        self.accreg.get(record).add(record=record, store=self)
         record.stores.add(self)
 
     def update(self, record, upsert=False):
@@ -67,17 +87,20 @@ class Store(object):
         :param bool upsert: if True (False by default), add the record if not
             exist"""
 
-        try:
-            self.accessorset.update(record=record, store=self)
+        accessor = self.accreg.get(record)
 
-        except Exception:
-            if upsert:
-                self.accessorset.add(record=record, store=self)
+        if accessor is not None:
+            try:
+                accessor.update(record=record, store=self)
 
-            else:
-                raise
+            except Exception:
+                if upsert:
+                    accessor.add(record=record, store=self)
 
-        record.stores.add(self)
+                else:
+                    raise
+
+            record.stores.add(self)
 
     def get(self, record):
         """Get input record from this store.
@@ -89,10 +112,14 @@ class Store(object):
         :return: corresponding record.
         :rtype: record"""
 
-        result = self.accessorset.get(record=record, store=self)
+        result = self.accreg.get(record).get(record=record, store=self)
         result.stores.add(self)
 
         return result
+
+    def __getitem__(self, key):
+
+        return self.get(record=key)
 
     def find(self, rtype, **fields):
         """Find records related to type and fields and register this to result
@@ -104,7 +131,9 @@ class Store(object):
         :rtype: list
         """
 
-        result = self.accessorset.find(store=self, rtype=rtype, **fields)
+        result = self.accreg.get(rtype).find(
+            store=self, rtype=rtype, fields=fields
+        )
 
         for record in result:
             record.stores.add(self)
@@ -117,8 +146,12 @@ class Store(object):
         :param Record record: record to remove.
         """
 
-        self.accessorset.remove(store=self, record=record)
+        self.accreg.get(record).remove(store=self, record=record)
         record.stores.remove(self)
+
+    def __delitem__(self, record):
+
+        self.remove(record=record)
 
     def __iadd__(self, records):
         """Add record(s).
@@ -130,8 +163,7 @@ class Store(object):
             records = [records]
 
         for record in records:
-
-            self.create(record.__class__, **record.fields)
+            self.add(record=record)
 
     def __ior__(self, records):
         """Update record(s) with upsert flag equals True.
@@ -144,7 +176,7 @@ class Store(object):
 
         for record in records:
 
-            self.update(record, upsert=True)
+            self.update(record=record, upsert=True)
 
     def __isub__(self, records):
         """Remove record(s) to this store.
@@ -157,72 +189,3 @@ class Store(object):
 
         for record in records:
             self.remove(record=record)
-
-
-class _AccessorSet(object):
-    """In charge of delegating store record processing to accessors."""
-
-    __slots__ = ('accessorsbytype')
-
-    def __init__(self, accessors, *args, **kwargs):
-
-        super(_AccessorSet, self).__init__(*args, **kwargs)
-
-        self.accessorsbytype = {}
-
-        for accessor in accessors:
-            self.accessorsbytype[accessor.__rtype__] = accessor
-
-    def create(self, store, rtype, **fields):
-        """Create a records with input rtype and specific field values."""
-
-        return self.accessorsbytype[rtype].create(store=store, **fields)
-
-    def add(self, store, record):
-        """Delegate record addition to a dedicated store.
-
-        :param Store store: store able to process input record."""
-
-        self.accessorsbytype[record.__class__].add(store=store, record=record)
-
-    def get(self, store, record):
-        """Get a record.
-
-        :param Store store: store able to process input record."""
-
-        return self.accessorsbytype[record.__class__].get(
-            store=store, record=record
-        )
-
-    def find(self, store, rtype, **kwargs):
-        """
-        :param Store store: store able to process input record.
-        """
-
-        return self.accessorsbytype[rtype].find(store=store, **kwargs)
-
-    def update(self, store, record):
-        """
-        :param Store store: store able to process input record.
-        """
-
-        self.accessorsbytype[record.__class__].update(
-            store=store, record=record
-        )
-
-    def remove(self, store, record):
-        """
-        :param Store store: store able to process input record.
-        """
-
-        self.accessorsbytype[record.__class__].remove(
-            store=store, record=record
-        )
-
-    def __iadd__(self, accessor):
-
-        self.accessorsbytype[accessor.__rtype__] = accessor
-
-    def __isub__(self, accessor):
-
-        del self.accessorsbytype[accessor.__rtype__]

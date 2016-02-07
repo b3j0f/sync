@@ -24,10 +24,7 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Sync version module.
-
-Define the library version.
-"""
+"""b3j0f.sync version module."""
 
 __all__ = ['__version__']
 

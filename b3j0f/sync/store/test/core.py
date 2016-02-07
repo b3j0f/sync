@@ -24,50 +24,11 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-from .record import Record
+"""store.core UTs"""
+
+from b3j0f.utils.ut import UTCase
 
 
-class Accessor(object):
-    """Apply record access rules on stores."""
+class StoreTest(UTCase):
 
-    __rtype__ = Record  #: specify record type accessor implementation.
-
-    def __hash__(self):
-
-        return hash(self.__rtype__)
-
-    def __eq__(self, other):
-
-        return self.__rtype__ == other
-
-    def __cmp__(self, other):
-
-        return cmp(self.__rtype__, other)
-
-    def create(self, store, **fields):
-        """Create a record related to store field values."""
-
-    def add(self, store, record):
-        """Add input record in a store"""
-
-        raise NotImplementedError()
-
-    def update(self, store, record):
-        """Update a record in a store."""
-
-        raise NotImplementedError()
-
-    def get(self, store, record):
-        """Get a record from a store."""
-
-        raise NotImplementedError()
-
-    def find(self, store, rtype, **kwargs):
-        """Find records from a store."""
-
-        raise NotImplementedError()
-
-    def remove(self, store, record):
-        """Remove records from a store."""
-
-        raise NotImplementedError()
+    pass

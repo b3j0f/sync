@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2015 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,42 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""b3j0f.sync package."""
+"""Accessor definition module."""
 
-from .version import __version__
-from .record import Record, Field
-from .store import Store, StoreRegistry
-from .accessor import Accessor, AccessorRegistry
+__all__ = ['Accessor']
+
+
+class Accessor(object):
+    """Apply record access rules on stores."""
+
+    __rtypes__ = []  #: specify record type accessor implementations.
+
+    def create(self, store, rtype, fields):
+        """Create a record related to store field values."""
+
+        raise NotImplementedError()
+
+    def add(self, store, record):
+        """Add input record in a store"""
+
+        raise NotImplementedError()
+
+    def update(self, store, record):
+        """Update record in a store."""
+
+        raise NotImplementedError()
+
+    def get(self, store, record):
+        """Get a record from a store."""
+
+        raise NotImplementedError()
+
+    def find(self, store, rtype, fields):
+        """Find records from a store."""
+
+        raise NotImplementedError()
+
+    def remove(self, store, record):
+        """Remove a record from a store."""
+
+        raise NotImplementedError()

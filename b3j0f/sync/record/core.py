@@ -24,19 +24,23 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
+"""Record definition module."""
+
+__all__ = ['Record']
+
 from inspect import getmembers
 
-from .field import FieldDescriptor
+from .field import Field
 
 
-class MetaRecord(type):
+class _MetaRecord(type):
     """Apply field descriptors on record field values."""
 
     def __call__(cls, *args, **kwargs):
 
         for name, member in getmembers(cls):
 
-            if isinstance(member, FieldDescriptor):
+            if isinstance(member, Field):
 
                 value = kwargs.get(name)
 
@@ -55,19 +59,19 @@ class Record(object):
     class Error(Exception):
         """Handle record errors."""
 
-    __metaclass__ = MetaRecord
+    __metaclass__ = _MetaRecord
 
-    __slots__ = ('stores', 'fields', '_oldfields')
+    __slots__ = ('_stores', 'fields', '_oldfields')
 
-    def __init__(self, *stores, **fields):
+    def __init__(self, _stores, **fields):
         """
-        :param stores: stores to use in this record.
+        :param Stores stores: stores to use in this record.
         :param fields: record field values.
         """
 
         super(Record, self).__init__()
 
-        self.stores = set(stores)
+        self._stores = set(_stores)
         self._oldfields = {}
         self.fields = fields
 
@@ -79,10 +83,9 @@ class Record(object):
             super(Record, self).__setattr__(key, value)
 
         else:
-
             # apply field descriptor if exists
             fielddesc = getattr(self.__class__, key, None)
-            if isinstance(fielddesc, FieldDescriptor):
+            if isinstance(fielddesc, Field):
                 value = fielddesc.getvalue(value, name=key)
 
             oldvalue = self.fields.get(key)
@@ -117,12 +120,12 @@ class Record(object):
         :param set stores: stores to add to this record stores."""
 
         if stores is not None:
-            self.stores |= stores
+            self._stores |= stores
 
-        if not self.stores:
-            raise Record.Error('No store to commit add/update {0}'.format(self))
+        if not self._stores:
+            raise Record.Error('No store to add/update record {0}'.format(self))
 
-        for store in self.stores:
+        for store in self._stores:
             store.update(record=self, upsert=True)
 
         self._oldfields.clear()
@@ -135,7 +138,7 @@ class Record(object):
         """
 
         if stores is None:
-            stores = self.stores
+            self._stores |= stores
 
         for store in stores:
             store.delete(self)

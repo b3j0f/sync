@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2015 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,7 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
+"""b3j0f.sync.accessor package."""
 
-class FieldDescriptor(object):
-    """Record field descriptor."""
-
-    def __init__(self, ftype=object, default=None, *args, **kwargs):
-
-        super(FieldDescriptor, self).__init__(*args, **kwargs)
-
-        self.ftype = ftype
-        self.default = default
-
-    def getvalue(self, value, name):
-        """Get final value which corresponds to input value or default value if
-        value is None.
-
-        :param value: value to compare with this.
-        :param str name: field name.
-        :raises: TypeError if input value does not match this field type.
-        """
-
-        result = self.default if value is None else value
-
-        if result is not None and not isinstance(value, self.ftype):
-            raise TypeError(
-                'Parameter {0}: {1} does not match {2}'.format(
-                    name, value, self
-                )
-            )
-
-        return result
+from .core import Accessor
+from .registry import AccessorRegistry

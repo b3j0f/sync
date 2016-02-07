@@ -55,7 +55,7 @@ with open(join(BASEPATH, NAMEPATH, 'version.py')) as f:
 
 KEYWORDS = [
     'utils', 'tools', 'development', 'synchronizer', 'design pattern',
-    'sync', 'observer', 'model', 'interoperability'
+    'sync', 'observer', 'record', 'interoperability'
 ]
 
 DEPENDENCIES = [str(ir.req) for ir in parse_requirements('requirements.txt')]

@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2015 Jonathan Labéjof <jonathan.labejof@gmail.com>
+# Copyright (c) 2014 Jonathan Labéjof <jonathan.labejof@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,61 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""b3j0f.sync package."""
+"""store.field UTs"""
 
-from .version import __version__
-from .record import Record, Field
-from .store import Store, StoreRegistry
-from .accessor import Accessor, AccessorRegistry
+from unittest import main
+
+from b3j0f.utils.ut import UTCase
+
+from ..field import Field
+
+
+class FieldTest(UTCase):
+
+    def test_type(self):
+
+        field = Field(ftype=int)
+
+        self.assertRaises(TypeError, field.getvalue, '')
+
+        value = field.getvalue(value=None)
+
+        self.assertIsNone(value)
+
+        value = field.getvalue(value=0)
+
+        self.assertEqual(value, 0)
+
+    def test_default(self):
+
+        field = Field(default=1)
+
+        value = field.getvalue(value=None)
+
+        self.assertEqual(value, 1)
+
+        value = field.getvalue(value=2)
+
+        self.assertEqual(value, 2)
+
+    def test_default_type(self):
+
+        field = Field(ftype=int, default=1)
+
+        value = field.getvalue(value=None)
+
+        self.assertEqual(1, value)
+
+        self.assertRaises(TypeError, field.getvalue, '')
+
+        value = field.getvalue(value=2)
+
+        self.assertEqual(2, value)
+
+    def test_wrong_default_type(self):
+
+        self.assertRaises(TypeError, Field, ftype=int, default='')
+
+
+if __name__ == '__main__':
+    main()
