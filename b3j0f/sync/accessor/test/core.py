@@ -26,9 +26,138 @@
 
 """accessor.core UTs"""
 
+from unittest import main
+
 from b3j0f.utils.ut import UTCase
+
+from ..core import Accessor
+
+from ...record.test.core import MyRecord
+
+
+class MyAccessor(Accessor):
+
+    __rtypes__ = []  #: specify record type accessor implementations.
+
+    def create(self, store, rtype, fields):
+        """Create a record related to store field values."""
+
+        return rtype(**fields)
+
+    def add(self, store, records):
+        """Add records in a store"""
+
+        for record in records:
+            store[record.one] = record.copy()
+
+    def update(self, store, records, upsert=False):
+        """Update records in a store.
+
+        :param Store store: store where update the records.
+        :param bool upsert: if True (default False), add the record if not exist."""
+
+        if not upsert:
+            for record in records:
+                if record.one not in store:
+                    raise Exception()
+
+        for record in records:
+            store[record.one] = record.copy()
+
+    def get(self, store, record):
+        """Get a record from a store."""
+
+        return store[record.one]
+
+    def find(self, store, rtype, fields):
+        """Find records from a store."""
+
+        return list(store.values())
+
+    def remove(self, store, records):
+        """Remove records from a store."""
+
+        for record in records:
+            del store[record.one]
 
 
 class AccessorTest(UTCase):
 
-    pass
+    def setUp(self):
+
+        self.store = {}
+        self.accessor = MyAccessor()
+        self.record = MyRecord()
+
+    def test_create(self):
+
+        record = self.accessor.create(
+            store=self.store, rtype=MyRecord, fields={}
+        )
+
+        self.assertEqual(record.one, MyRecord.one.default)
+
+    def test_add(self):
+
+        self.accessor.add(store=self.store, records=[self.record])
+
+        self.assertEqual(self.store[self.record.one].one, self.record.one)
+
+    def test_update(self):
+
+        self.assertRaises(
+            Exception,
+            self.accessor.update, store=self.store, records=[self.record]
+        )
+
+        self.accessor.update(
+            store=self.store, records=[self.record], upsert=True
+        )
+
+        self.assertEqual(self.store[self.record.one].two, self.record.two)
+
+        self.record.two = - self.record.two
+        self.assertNotEqual(self.store[self.record.one].two, self.record.two)
+        self.accessor.update(store=self.store, records=[self.record])
+
+        self.assertEqual(self.store[self.record.one].two, self.record.two)
+
+    def test_get(self):
+
+        self.accessor.add(store=self.store, records=[self.record])
+
+        record = self.accessor.get(store=self.store, record=self.record)
+
+        self.assertEqual(record, self.record)
+
+    def test_find(self):
+
+        records = self.accessor.find(
+            store=self.store, rtype=MyRecord, fields={'one': 1}
+        )
+
+        self.assertFalse(records)
+
+        self.accessor.add(store=self.store, records=[self.record])
+        records = self.accessor.find(
+            store=self.store, rtype=MyRecord, fields={'one': 1}
+        )
+
+        self.assertTrue(records)
+
+    def test_remove(self):
+
+        self.assertRaises(
+            Exception,
+            self.accessor.remove, store=self.store, records=[self.record]
+        )
+
+        self.accessor.add(store=self.store, records=[self.record])
+
+        self.accessor.remove(store=self.store, records=[self.record])
+
+        self.assertFalse(self.store)
+
+
+if __name__ == '__main__':
+    main()

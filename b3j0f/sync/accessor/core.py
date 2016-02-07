@@ -35,31 +35,52 @@ class Accessor(object):
     __rtypes__ = []  #: specify record type accessor implementations.
 
     def create(self, store, rtype, fields):
-        """Create a record related to store field values."""
+        """Create a record related to store field values.
+
+        :param Store store: store from which create a new record.
+        :param type rtype: records type to create from the store.
+        :param dict fields: specific values to use such as the store data
+            content."""
 
         raise NotImplementedError()
 
-    def add(self, store, record):
-        """Add input record in a store"""
+    def add(self, store, records):
+        """Add records in a store.
+
+        :param Store store: store from which add input records.
+        :param list records: records to add to the store."""
 
         raise NotImplementedError()
 
-    def update(self, store, record):
-        """Update record in a store."""
+    def update(self, store, records, upsert=False):
+        """Update records in a store.
+
+        :param Store store: store where update the records.
+        :param list records: records to update in the input store.
+        :param bool upsert: if True (default False), add the record if not exist."""
 
         raise NotImplementedError()
 
     def get(self, store, record):
-        """Get a record from a store."""
+        """Get a record from a store.
+
+        :param Store store: store from which get a record.
+        :param Record record: record to get from the store.
+        :rtype: Record"""
 
         raise NotImplementedError()
 
     def find(self, store, rtype, fields):
-        """Find records from a store."""
+        """Find records from a store.
+
+        :rtype: list"""
 
         raise NotImplementedError()
 
-    def remove(self, store, record):
-        """Remove a record from a store."""
+    def remove(self, store, records):
+        """Remove records from a store.
+
+        :param Store store: store from where remove records.
+        :param list records: records to remove."""
 
         raise NotImplementedError()

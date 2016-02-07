@@ -28,6 +28,8 @@
 
 __all__ = ['Store']
 
+from collections import Iterable
+
 from ..record.core import Record
 from ..accessor.registry import AccessorRegistry
 
@@ -36,6 +38,9 @@ class Store(object):
     """Store records.
 
     A Store can be a database or a github account for example."""
+
+    class Error(Exception):
+        """Handle Store errors."""
 
     def __init__(self, accessors, *args, **kwargs):
 
@@ -56,50 +61,71 @@ class Store(object):
         self.accreg.clear()
         self.accreg += value
 
+    def _getaccessor(self, records):
+        """Get the right accessor able to process input record.
+
+        :param records: record(s) to process with the output accessor.
+        :type records: Record, type or list
+        :raises: Store.Error if no accessor is available."""
+
+        record = (
+            records[0]
+            if (isinstance(records, Iterable) and records)
+            else records
+        )
+
+        result = self.accreg.get(record)
+
+        if result is None:
+            raise Store.Error('No store found to process {0}'.format(record))
+
+        return result
+
     def create(self, rtype, fields):
         """Create a record with input type and field values.
 
         :param type rtype: record type.
         :param dict fields: record fields to use in a store context."""
 
-        result = self.accreg.get(rtype).create(
+        result = self._getaccessor(rtype).create(
             store=self, rtype=rtype, fields=fields
         )
-        self.add(record=result)
+        self.add(records=[result])
 
         return result
 
-    def add(self, record):
-        """Add a record and register this in record stores.
+    def add(self, records):
+        """Add records and register this in stores of records.
 
         Register this store to record stores if record is added.
 
-        :param Record record: record to add.
+        :param list records: records to add. Must be same type.
         """
 
-        self.accreg.get(record).add(record=record, store=self)
-        record.stores.add(self)
+        self._getaccessor(records).add(store=self, records=records)
+        for record in records:
+            record.stores.add(self)
 
-    def update(self, record, upsert=False):
-        """Update a record in this store and register this in record stores.
+    def update(self, records, upsert=False):
+        """Update records in this store and register this in stores of records.
 
-        :param Record record: record to update in this store.
+        :param list records: records to update in this store. Must be same type.
         :param bool upsert: if True (False by default), add the record if not
             exist"""
 
-        accessor = self.accreg.get(record)
+        accessor = self._getaccessor(records)
 
-        if accessor is not None:
-            try:
-                accessor.update(record=record, store=self)
+        try:
+            accessor.update(store=self, records=records)
 
-            except Exception:
-                if upsert:
-                    accessor.add(record=record, store=self)
+        except Exception:
+            if upsert:
+                accessor.add(store=self, records=records)
 
-                else:
-                    raise
+            else:
+                raise
 
+        for record in records:
             record.stores.add(self)
 
     def get(self, record):
@@ -112,7 +138,7 @@ class Store(object):
         :return: corresponding record.
         :rtype: record"""
 
-        result = self.accreg.get(record).get(record=record, store=self)
+        result = self._getaccessor(record).get(store=self, record=record)
         result.stores.add(self)
 
         return result
@@ -140,18 +166,20 @@ class Store(object):
 
         return result
 
-    def remove(self, record):
+    def remove(self, records):
         """Remove input record and unregister this store from record stores.
 
-        :param Record record: record to remove.
+        :param Record record: record to remove. Records must be the same type.
         """
 
-        self.accreg.get(record).remove(store=self, record=record)
-        record.stores.remove(self)
+        self._getaccessor(records).remove(store=self, records=records)
+
+        for record in records:
+            record.stores.remove(self)
 
     def __delitem__(self, record):
 
-        self.remove(record=record)
+        self.remove(records=[record])
 
     def __iadd__(self, records):
         """Add record(s).
@@ -162,8 +190,7 @@ class Store(object):
         if isinstance(records, Record):
             records = [records]
 
-        for record in records:
-            self.add(record=record)
+        self.add(records=records)
 
     def __ior__(self, records):
         """Update record(s) with upsert flag equals True.
@@ -174,9 +201,7 @@ class Store(object):
         if isinstance(records, Record):
             records = [records]
 
-        for record in records:
-
-            self.update(record=record, upsert=True)
+        self.update(records=records, upsert=True)
 
     def __isub__(self, records):
         """Remove record(s) to this store.
@@ -187,5 +212,4 @@ class Store(object):
         if isinstance(records, Record):
             records = [records]
 
-        for record in records:
-            self.remove(record=record)
+        self.remove(records=records)

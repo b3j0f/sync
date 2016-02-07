@@ -104,6 +104,51 @@ class RecordTest(UTCase):
 
         self.myrecord.a = 1
 
+    def test_commit(self):
+
+        pass
+
+    def test_delete(self):
+
+        pass
+
+    def test_copy(self):
+
+        self.myrecord._stores |= set('test')
+
+        copy = self.myrecord.copy()
+
+        for name in copy._fields:
+            self.assertEqual(getattr(copy, name), getattr(self.myrecord, name))
+
+        self.assertTrue(self.myrecord._stores)
+        self.assertFalse(copy._stores)
+
+        self.myrecord._stores = set()
+
+    def test_raw(self):
+
+        fields = self.myrecord._fields.copy()
+
+        raw = self.myrecord.raw(dirty=False)
+
+        self.assertEqual(raw, fields)
+
+        raw = self.myrecord.raw(dirty=True)
+
+        self.assertEqual(raw, fields)
+
+        self.myrecord.two = 5
+
+        raw = self.myrecord.raw(dirty=False)
+
+        self.assertEqual(raw, fields)
+
+        raw = self.myrecord.raw(dirty=True)
+
+        self.assertNotEqual(raw, fields)
+        self.assertEqual(raw['two'], 5)
+
 
 if __name__ == '__main__':
     main()

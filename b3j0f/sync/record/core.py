@@ -34,6 +34,8 @@ from .field import Field
 
 from six import add_metaclass
 
+from copy import deepcopy
+
 
 class _MetaRecord(type):
     """Apply field descriptors on record field values."""
@@ -56,7 +58,7 @@ class _MetaRecord(type):
 
 
 @add_metaclass(_MetaRecord)
-class Record(object, metaclass=_MetaRecord):
+class Record(object):
     """Record object which embeds data values."""
 
     class Error(Exception):
@@ -142,15 +144,47 @@ class Record(object, metaclass=_MetaRecord):
 
         self._oldfields.clear()
 
-    def delete(self, stores=None):
-        """Delete this record in stores.
+    def __del__(self, stores=None):
+        """Remove this record from this stores.
 
-        :param list stores: stores where delete this record. This stores by
+        :param list stores: stores where to delete this record. This stores by
             default.
         """
 
-        if stores is None:
+        if stores is not None:
             self._stores |= stores
 
-        for store in stores:
+        for store in self._stores:
             store.delete(self)
+
+    def copy(self):
+        """Copy this record with input data values.
+
+        Stores are not copied."""
+
+        return self.__class__(**deepcopy(self._fields))
+
+    def raw(self, dirty=False):
+        """Get raw data value.
+
+        :param bool dirty: if True (False by default) get dirty values in raw.
+        :rtype: dict."""
+
+        result = deepcopy(self._fields)
+
+        if not dirty:
+            result.update(deepcopy(self._oldfields))
+
+        return result
+
+    def __eq__(self, other):
+
+        return self.raw() == other.raw()
+
+    def __cmp__(self, other):
+
+        return cmp(self.raw(), other.raw())
+
+    def __ne__(self, other):
+
+        return self.raw() != other.raw()
