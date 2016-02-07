@@ -26,14 +26,84 @@
 
 """record.core UTs"""
 
+from unittest import main
+
 from b3j0f.utils.ut import UTCase
 
 from ..core import Record
 from ..field import Field
 
 
+class MyRecord(Record):
+
+    one = Field(ftype=int, default=1)
+    two = Field(default=2)
+
+
 class RecordTest(UTCase):
 
-    class MyRecord(Record):
+    def setUp(self):
 
-        Field(int, 1)
+        self.myrecord = MyRecord()
+
+    def test_isdirty(self):
+
+        self.assertFalse(self.myrecord.isdirty)
+
+        self.myrecord.a = 1
+
+        self.assertTrue(self.myrecord.isdirty)
+
+        self.myrecord.cancel()
+
+        self.assertFalse(self.myrecord.isdirty)
+
+        self.myrecord.a = 1
+
+        self.assertTrue(self.myrecord.isdirty)
+
+        self.myrecord.commit()
+
+        self.assertFalse(self.myrecord.isdirty)
+
+    def test_one(self):
+
+        self.assertEqual(self.myrecord.one, MyRecord.one.default)
+
+        self.assertRaises(TypeError, setattr, self.myrecord, 'one', '')
+
+        self.myrecord.one = 2
+
+        self.assertEqual(self.myrecord.one, 2)
+
+        self.myrecord.cancel()
+
+        self.assertEqual(self.myrecord.one, 1)
+
+    def test_two(self):
+
+        self.assertEqual(self.myrecord.two, MyRecord.two.default)
+
+        self.myrecord.two = ''
+
+        self.assertEqual(self.myrecord.two, '')
+
+        self.myrecord.cancel()
+
+        self.assertEqual(self.myrecord.two, 2)
+
+    def test_dynamic(self):
+
+        self.myrecord.a = 1
+
+        MyRecord.a = Field(ftype=str)
+
+        self.assertRaises(TypeError, setattr, self.myrecord, 'a')
+
+        del MyRecord.a
+
+        self.myrecord.a = 1
+
+
+if __name__ == '__main__':
+    main()

@@ -32,6 +32,8 @@ from inspect import getmembers
 
 from .field import Field
 
+from six import add_metaclass
+
 
 class _MetaRecord(type):
     """Apply field descriptors on record field values."""
@@ -53,17 +55,16 @@ class _MetaRecord(type):
         return result
 
 
-class Record(object):
+@add_metaclass(_MetaRecord)
+class Record(object, metaclass=_MetaRecord):
     """Record object which embeds data values."""
 
     class Error(Exception):
         """Handle record errors."""
 
-    __metaclass__ = _MetaRecord
+    __slots__ = ('_stores', '_fields', '_oldfields')
 
-    __slots__ = ('_stores', 'fields', '_oldfields')
-
-    def __init__(self, _stores, **fields):
+    def __init__(self, _stores=None, **fields):
         """
         :param Stores stores: stores to use in this record.
         :param fields: record field values.
@@ -71,15 +72,15 @@ class Record(object):
 
         super(Record, self).__init__()
 
-        self._stores = set(_stores)
+        self._stores = set([] if _stores is None else _stores)
         self._oldfields = {}
-        self.fields = fields
+        self._fields = fields
 
         self.commit()
 
     def __setattr__(self, key, value):
 
-        if key[0] != '_' or key in self.__slots__:
+        if key[0] == '_' or key in self.__slots__:
             super(Record, self).__setattr__(key, value)
 
         else:
@@ -88,17 +89,31 @@ class Record(object):
             if isinstance(fielddesc, Field):
                 value = fielddesc.getvalue(value, name=key)
 
-            oldvalue = self.fields.get(key)
+            oldvalue = self._fields.get(key)
 
             if oldvalue != value:
 
-                self.fields[key] = value
+                self._fields[key] = value
                 self._oldfields.setdefault(key, oldvalue)
+
+    def __getattribute__(self, key):
+
+        return object.__getattribute__(self, '_fields').get(
+            key, object.__getattribute__(self, key)
+        )
 
     def __getattr__(self, key):
         """Try to redirect input attribute name to self values."""
 
-        return self.fields[key]
+        result = None
+
+        try:
+            result = self._fields[key]
+
+        except KeyError:
+            raise Record.Error('No field {0}'.format(key))
+
+        return result
 
     @property
     def isdirty(self):
@@ -106,12 +121,12 @@ class Record(object):
 
         :rtype: bool"""
 
-        return self._oldfields
+        return not not self._oldfields
 
     def cancel(self):
         """Cancel modifications."""
 
-        self.fields.update(self._oldfields)
+        self._fields.update(self._oldfields)
         self._oldfields.clear()
 
     def commit(self, stores=None):
@@ -121,9 +136,6 @@ class Record(object):
 
         if stores is not None:
             self._stores |= stores
-
-        if not self._stores:
-            raise Record.Error('No store to add/update record {0}'.format(self))
 
         for store in self._stores:
             store.update(record=self, upsert=True)
