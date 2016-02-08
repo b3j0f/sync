@@ -93,15 +93,10 @@ setup(
         'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy'
     ],
     test_suite='b3j0f',
-    keywords=KEYWORDS,
-    data_files=[
-        (
-            expanduser('~/etc/'),
-            ['etc/b3j0fsync-store.conf', 'etc/b3j0fsync-synchronizer.conf']
-        )
-    ]
+    keywords=KEYWORDS
 )

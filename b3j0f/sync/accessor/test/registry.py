@@ -26,9 +26,99 @@
 
 """accessor.registry UTs"""
 
+from unittest import main
+
 from b3j0f.utils.ut import UTCase
+
+from ..registry import AccessorRegistry
+from .core import MyAccessor
+from ...record.test.core import MyRecord
+
+
+class MyRecord0(MyRecord):
+    pass
+
+
+class MyRecord1(MyRecord):
+    pass
+
+
+class MyRecord2(MyRecord):
+    pass
+
+
+class MyAccessor0(MyAccessor):
+
+    __rtypes__ = [MyRecord0]
+
+
+class MyAccessor12(MyAccessor):
+
+    __rtypes__ = [MyRecord1, MyRecord2]
 
 
 class AccessorRegistryTest(UTCase):
 
-    pass
+    def setUp(self):
+
+        self.ar = AccessorRegistry()
+        self.myaccessor0 = MyAccessor0()
+        self.myaccessor12 = MyAccessor12()
+
+    def test_register(self):
+
+        accessor = self.ar.get(MyRecord0)
+        self.assertIsNone(accessor)
+
+        self.ar.register(accessors=[self.myaccessor0])
+
+        accessor = self.ar.get(MyRecord0)
+        self.assertIs(accessor, self.myaccessor0)
+
+        accessor = self.ar.get(MyRecord0())
+        self.assertIs(accessor, self.myaccessor0)
+
+        self.ar.unregister(accessors=[accessor])
+
+        accessor = self.ar.get(MyRecord0)
+        self.assertIsNone(accessor)
+
+        accessor = self.ar.get(MyRecord1)
+        self.assertIsNone(accessor)
+
+        accessor = self.ar.get(MyRecord2)
+        self.assertIsNone(accessor)
+
+        self.ar.register(accessors=[self.myaccessor12])
+
+        accessor = self.ar.get(MyRecord1)
+        self.assertIs(accessor, self.myaccessor12)
+
+        accessor = self.ar.get(MyRecord2())
+        self.assertIs(accessor, self.myaccessor12)
+
+        self.ar.unregister(rtypes=[MyRecord1])
+
+        accessor = self.ar.get(key=MyRecord1)
+        self.assertIsNone(accessor)
+
+        accessor = self.ar.get(key=MyRecord2)
+        self.assertIs(accessor, self.myaccessor12)
+
+        accessor = self.ar.get(key=MyRecord1, default=1)
+        self.assertEqual(accessor, 1)
+
+        accessor = self.ar.get(key=MyRecord2, default=1)
+        self.assertIs(accessor, self.myaccessor12)
+
+        self.ar.unregister(accessors=[self.myaccessor12])
+
+        accessor = self.ar.get(key=MyRecord1)
+        self.assertIsNone(accessor)
+
+        accessor = self.ar.get(key=MyRecord2)
+        self.assertIsNone(accessor)
+
+
+if __name__ == '__main__':
+    main()

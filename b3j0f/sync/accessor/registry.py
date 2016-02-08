@@ -35,35 +35,39 @@ from ..record import Record
 class AccessorRegistry(dict):
     """In charge of register accessors."""
 
-    def __init__(self, accessors, *args, **kwargs):
+    def __init__(self, accessors=None, *args, **kwargs):
 
         super(AccessorRegistry, self).__init__(*args, **kwargs)
 
-        self += accessors
+        if accessors is not None:
+            self += accessors
 
-    def register(self, accessor):
-        """Register input accessor.
+    def register(self, accessors):
+        """Register accessors.
 
-        :param Accessor accessor: accessor to register.
+        :param list accessors: accessors to register.
         """
 
-        for rtype in accessor.__rtypes__:
-            self[rtype] = accessor
-
-    def unregister(self, accessor=None, rtype=None):
-        """Unregister accessor or rtype.
-
-        :param Accessor accessor: accessor to unregister.
-        :param type rtype: record type to unregister.
-        """
-
-        if rtype is not None:
-            del self[rtype]
-
-        if accessor is not None:
+        for accessor in accessors:
             for rtype in accessor.__rtypes__:
-                if rtype in self:
-                    del self[rtype]
+                self[rtype] = accessor
+
+    def unregister(self, rtypes=None, accessors=None):
+        """Unregister accessors or rtypes.
+
+        :param list rtypes: record types to unregister.
+        :param list accessors: accessors to unregister.
+        """
+
+        if rtypes is not None:
+            for rtype in rtypes:
+                del self[rtype]
+
+        if accessors is not None:
+            for accessor in accessors:
+                for rtype in accessor.__rtypes__:
+                    if rtype in self:
+                        del self[rtype]
 
     def get(self, key, default=None):
         """Get the accessor able to process input record (type).
@@ -75,25 +79,3 @@ class AccessorRegistry(dict):
             key = key.__class__
 
         return super(AccessorRegistry, self).get(key, default)
-
-    def __iadd__(self, other):
-        """Register accessor(s).
-
-        :param Accessor(s) other: accessors to register."""
-
-        if isinstance(other, Accessor):
-            other = [other]
-
-        for accessor in other:
-            self.register(accessor=accessor)
-
-    def __isub__(self, other):
-        """Unregister accessor(s).
-
-        :param Accessor(s) other: accessors to unregister."""
-
-        if isinstance(other, Accessor):
-            other = [other]
-
-        for accessor in other:
-            self.unregister(accessor=accessor)
