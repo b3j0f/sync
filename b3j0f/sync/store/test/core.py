@@ -26,9 +26,109 @@
 
 """store.core UTs"""
 
+from unittest import main
+
 from b3j0f.utils.ut import UTCase
+
+from ..core import Store
+
+from ...accessor.test.registry import (
+    MyAccessor0, MyAccessor12, MyRecord1, MyRecord2
+)
+
+
+class MyStore(Store):
+
+    def __init__(self, *args, **kwargs):
+
+        super(MyStore, self).__init__(*args, **kwargs)
+
+        self.data = {}
 
 
 class StoreTest(UTCase):
 
-    pass
+    def setUp(self):
+
+        self.myaccessor0 = MyAccessor0()
+        self.myaccessor12 = MyAccessor12()
+        self.store = MyStore(accessors=[self.myaccessor0, self.myaccessor12])
+
+    def test_accessors(self):
+
+        self.assertTrue(self.store._accreg)
+
+        self.store.accessors = []
+
+        self.assertFalse(self.store._accreg)
+
+        self.store.accessors = [self.myaccessor0, self.myaccessor12]
+
+        self.assertTrue(self.store._accreg)
+
+    def test_getaccessors(self):
+
+        accessor = self.store._getaccessor(records=MyRecord1)
+
+        self.assertIs(accessor, self.myaccessor12)
+
+        accessor = self.store._getaccessor(records=[MyRecord1, MyRecord2])
+
+        self.assertIs(accessor, self.myaccessor12)
+
+        accessor = self.store._getaccessor(records=MyRecord1())
+
+        self.assertIs(accessor, self.myaccessor12)
+
+        accessor = self.store._getaccessor(records=[MyRecord1(), MyRecord2()])
+
+        self.assertIs(accessor, self.myaccessor12)
+
+    def test_create(self):
+
+        record = self.store.create(rtype=MyRecord1)
+
+        self.assertEqual(record.one, MyRecord1.one.default)
+
+        record = self.store.create(
+            rtype=MyRecord1,
+            fields={'three': 3, 'two': MyRecord1.two.default * 2}
+        )
+
+        self.assertEqual(record.one, MyRecord1.one.default)
+        self.assertEqual(record.two, MyRecord1.two.default * 2)
+        self.assertEqual(record.three, 3)
+
+        self.assertEqual(record.stores, [self.store])
+
+    def test_add(self):
+
+        records = [MyRecord1(**{'test': i}) for i in range(5)]
+
+        for record in records:
+            self.assertFalse(record.stores)
+
+        self.store.add(records=records)
+
+        for record in records:
+            self.assertTrue(record.stores)
+
+    def test_update(self):
+
+        records = [MyRecord1(**{'test': i}) for i in range(5)]
+
+        for record in records:
+            self.assertFalse(record.stores)
+
+        self.assertRaises(
+            Store.Error, self.store.update, records=records, upsert=False
+        )
+
+        self.store.update(records=records, upsert=True)
+        for record in records:
+            self.assertTrue(record.stores)
+
+        self.store.update(records=records, upsert=False)
+
+if __name__ == '__main__':
+    main()

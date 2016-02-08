@@ -34,7 +34,7 @@ from ..record.core import Record
 from ..accessor.registry import AccessorRegistry
 
 
-class Store(object):
+class Store(Record):
     """Store records.
 
     A Store can be a database or a github account for example."""
@@ -42,24 +42,28 @@ class Store(object):
     class Error(Exception):
         """Handle Store errors."""
 
-    def __init__(self, accessors, *args, **kwargs):
+    def __init__(self, accessors=None, *args, **kwargs):
 
         super(Store, self).__init__(*args, **kwargs)
 
-        self.accreg = AccessorRegistry(accessors)
+        self._accreg = AccessorRegistry(accessors=accessors)
 
     @property
     def accessors(self):
-        """Get accessors."""
+        """Get accessors.
 
-        return self.accreg
+        :rtype: list"""
+
+        return list(self._accreg.values())
 
     @accessors.setter
     def accessors(self, value):
-        """Change of accessors."""
+        """Change of accessors.
 
-        self.accreg.clear()
-        self.accreg += value
+        :param list value: accessors to register in this store."""
+
+        self._accreg.clear()
+        self._accreg.register(accessors=value)
 
     def _getaccessor(self, records):
         """Get the right accessor able to process input record.
@@ -74,18 +78,19 @@ class Store(object):
             else records
         )
 
-        result = self.accreg.get(record)
+        result = self._accreg.get(record)
 
         if result is None:
             raise Store.Error('No store found to process {0}'.format(record))
 
         return result
 
-    def create(self, rtype, fields):
+    def create(self, rtype, fields=None):
         """Create a record with input type and field values.
 
         :param type rtype: record type.
-        :param dict fields: record fields to use in a store context."""
+        :param dict fields: record fields to use in a store context.
+        :rtype: Record"""
 
         result = self._getaccessor(rtype).create(
             store=self, rtype=rtype, fields=fields
@@ -103,15 +108,16 @@ class Store(object):
         """
 
         self._getaccessor(records).add(store=self, records=records)
+
         for record in records:
-            record.stores.add(self)
+            record.stores += [self]
 
     def update(self, records, upsert=False):
         """Update records in this store and register this in stores of records.
 
         :param list records: records to update in this store. Must be same type.
         :param bool upsert: if True (False by default), add the record if not
-            exist"""
+            exist."""
 
         accessor = self._getaccessor(records)
 
@@ -126,7 +132,7 @@ class Store(object):
                 raise
 
         for record in records:
-            record.stores.add(self)
+            record.stores += [self]
 
     def get(self, record):
         """Get input record from this store.
@@ -136,10 +142,11 @@ class Store(object):
 
         :param Record record: record to get from this store.
         :return: corresponding record.
-        :rtype: record"""
+        :rtype: Record"""
 
         result = self._getaccessor(record).get(store=self, record=record)
-        result.stores.add(self)
+
+        result.stores += [self]
 
         return result
 
@@ -157,12 +164,12 @@ class Store(object):
         :rtype: list
         """
 
-        result = self.accreg.get(rtype).find(
+        result = self._accreg.get(rtype).find(
             store=self, rtype=rtype, fields=fields
         )
 
         for record in result:
-            record.stores.add(self)
+            record.stores += [self]
 
         return result
 
@@ -175,7 +182,8 @@ class Store(object):
         self._getaccessor(records).remove(store=self, records=records)
 
         for record in records:
-            record.stores.remove(self)
+            while self in record.stores:
+                record.stores.remove(self)
 
     def __delitem__(self, record):
 

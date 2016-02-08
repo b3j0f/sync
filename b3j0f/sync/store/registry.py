@@ -36,18 +36,18 @@ class StoreRegistry(Store):
 
     __rtypes__ = []  #: specify record type accessor implementations.
 
-    def __init__(self, stores, *args, **kwargs):
+    def __init__(self, _stores=None, *args, **kwargs):
 
         super(StoreRegistry, self).__init__(*args, **kwargs)
 
-        self.stores = stores
+        self._stores = [] if _stores is None else _stores
 
     def create(self, rtype, fields):
         """Create a record related to store data field values."""
 
         result = None
 
-        for store in self.stores:
+        for store in self._stores:
             try:
                 result = store.create(rtype=rtype, fields=fields)
 
@@ -62,7 +62,7 @@ class StoreRegistry(Store):
     def add(self, records):
         """Add input record(s) in a store"""
 
-        for store in self.stores:
+        for store in self._stores:
             try:
                 store.add(records=records)
 
@@ -72,7 +72,7 @@ class StoreRegistry(Store):
     def update(self, records, upsert=False):
         """Update a record(s) in a store."""
 
-        for store in self.stores:
+        for store in self._stores:
             try:
                 store.update(records=records, upsert=upsert)
 
@@ -84,7 +84,7 @@ class StoreRegistry(Store):
 
         result = None
 
-        for store in self.stores:
+        for store in self._stores:
             try:
                 result = store.get(record)
 
@@ -101,7 +101,7 @@ class StoreRegistry(Store):
 
         result = []
 
-        for store in self.stores:
+        for store in self._stores:
             result += store.find(rtype=rtype, fields=fields)
 
         return result
@@ -109,7 +109,7 @@ class StoreRegistry(Store):
     def remove(self, records):
         """Remove records from a store."""
 
-        for store in self.stores:
+        for store in self._stores:
             try:
                 store.remove(records=records)
 

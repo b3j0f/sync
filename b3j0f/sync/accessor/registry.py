@@ -40,7 +40,7 @@ class AccessorRegistry(dict):
         super(AccessorRegistry, self).__init__(*args, **kwargs)
 
         if accessors is not None:
-            self += accessors
+            self.register(accessors=accessors)
 
     def register(self, accessors):
         """Register accessors.

@@ -42,13 +42,13 @@ class MyAccessor(Accessor):
     def create(self, store, rtype, fields):
         """Create a record related to store field values."""
 
-        return rtype(**fields)
+        return rtype(**({} if fields is None else fields))
 
     def add(self, store, records):
         """Add records in a store"""
 
         for record in records:
-            store[record.one] = record.copy()
+            store.data[record.one] = record.copy()
 
     def update(self, store, records, upsert=False):
         """Update records in a store.
@@ -62,30 +62,38 @@ class MyAccessor(Accessor):
                     raise Exception()
 
         for record in records:
-            store[record.one] = record.copy()
+            store.data[record.one] = record.copy()
 
     def get(self, store, record):
         """Get a record from a store."""
 
-        return store[record.one]
+        return store.data[record.one]
 
     def find(self, store, rtype, fields):
         """Find records from a store."""
 
-        return list(store.values())
+        return list(store.data.values())
 
     def remove(self, store, records):
         """Remove records from a store."""
 
         for record in records:
-            del store[record.one]
+            store.data.pop(record.one, None)
+
+
+class MyStore(dict):
+
+    @property
+    def data(self):
+
+        return self
 
 
 class AccessorTest(UTCase):
 
     def setUp(self):
 
-        self.store = {}
+        self.store = MyStore()
         self.accessor = MyAccessor()
         self.record = MyRecord()
 

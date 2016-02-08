@@ -54,6 +54,8 @@ class _MetaRecord(type):
 
         result = type.__call__(cls, *args, **kwargs)
 
+        result.commit()
+
         return result
 
 
@@ -74,15 +76,18 @@ class Record(object):
 
         super(Record, self).__init__()
 
-        self._stores = set([] if _stores is None else _stores)
+        self._stores = [] if _stores is None else _stores
         self._oldfields = {}
         self._fields = fields
 
-        self.commit()
-
     def __setattr__(self, key, value):
 
-        if key[0] == '_' or key in self.__slots__:
+        inheritance = key[0] == '_'
+        if not inheritance:
+            superattr = getattr(self.__class__, key, None)
+            inheritance = not(superattr is None or isinstance(superattr, Field))
+
+        if inheritance:
             super(Record, self).__setattr__(key, value)
 
         else:
@@ -125,6 +130,18 @@ class Record(object):
 
         return not not self._oldfields
 
+    @property
+    def stores(self):
+        """get this stores."""
+
+        return self._stores
+
+    @stores.setter
+    def stores(self, value):
+        """Change of stores value."""
+
+        self._stores = value
+
     def cancel(self):
         """Cancel modifications."""
 
@@ -132,48 +149,73 @@ class Record(object):
         self._oldfields.clear()
 
     def commit(self, stores=None):
-        """Apply new values on this stores.
+        """Apply new values on stores.
 
-        :param set stores: stores to add to this record stores."""
+        :param set stores: stores to add to this record stores. Default this
+            stores."""
 
-        if stores is not None:
-            self._stores |= stores
+        if stores is None:
+            stores = self._stores
 
-        for store in self._stores:
-            store.update(record=self, upsert=True)
+        for store in stores:
+            store.update(records=[self], upsert=True)
 
         self._oldfields.clear()
 
-    def __del__(self, stores=None):
-        """Remove this record from this stores.
+    def delete(self, stores=None):
+        """Remove this record from stores.
 
         :param list stores: stores where to delete this record. This stores by
             default.
         """
 
-        if stores is not None:
-            self._stores |= stores
+        if stores is None:
+            stores = self._stores
 
         for store in self._stores:
-            store.delete(self)
+            store.remove(records=[self])
 
-    def copy(self):
+    def __del__(self, stores=None):
+
+        self.delete(stores=stores)
+
+    def copy(self, fields=None, stores=None):
         """Copy this record with input data values.
 
-        Stores are not copied."""
+        Stores are not copied.
 
-        return self.__class__(**deepcopy(self._fields))
+        :param dict fields: new data content to use.
+        :param list stores: default stores to use.
+        :rtype: Record"""
 
-    def raw(self, dirty=False):
+        _fields = self._fields
+
+        if fields is not None:
+            _fields.update(fields)
+
+        return self.__class__(_stores=stores, **deepcopy(_fields))
+
+    def raw(self, dirty=False, _raws=None):
         """Get raw data value.
 
         :param bool dirty: if True (False by default) get dirty values in raw.
+        :param dict _raws: private parameter used to save rawed records.
         :rtype: dict."""
 
         result = deepcopy(self._fields)
 
         if not dirty:
             result.update(deepcopy(self._oldfields))
+
+        for name in result.keys():  # convert inner data to raw
+            value = result[name]
+            if isinstance(value, Record):
+                if _raws is None:
+                    _raws = {}
+                value = _raws[value] = _raws.setdefault(
+                    value, value.raw(dirty=dirty, _raws=_raws)
+                )
+                result[name] = value
 
         return result
 

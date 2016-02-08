@@ -40,6 +40,15 @@ class MyRecord(Record):
     two = Field(default=2)
 
 
+class MyStore(object):
+
+    def remove(self, *args, **kwargs):
+        pass
+
+    def update(self, *args, **kwargs):
+        pass
+
+
 class RecordTest(UTCase):
 
     def setUp(self):
@@ -114,17 +123,22 @@ class RecordTest(UTCase):
 
     def test_copy(self):
 
-        self.myrecord._stores |= set('test')
+        self.myrecord.stores += [MyStore()]
 
         copy = self.myrecord.copy()
 
         for name in copy._fields:
             self.assertEqual(getattr(copy, name), getattr(self.myrecord, name))
 
-        self.assertTrue(self.myrecord._stores)
-        self.assertFalse(copy._stores)
+        self.assertTrue(self.myrecord.stores)
+        self.assertFalse(copy.stores)
 
-        self.myrecord._stores = set()
+        copy = self.myrecord.copy(stores=[MyStore()])
+
+        self.assertTrue(copy.stores)
+
+        copy = self.myrecord.copy(fields={'test': 1})
+        self.assertEqual(copy.test, 1)
 
     def test_raw(self):
 
