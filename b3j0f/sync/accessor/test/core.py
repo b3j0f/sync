@@ -58,7 +58,7 @@ class MyAccessor(Accessor):
 
         if not upsert:
             for record in records:
-                if record.one not in store:
+                if record.one not in store.data:
                     raise Exception()
 
         for record in records:
@@ -69,16 +69,28 @@ class MyAccessor(Accessor):
 
         return store.data[record.one]
 
-    def find(self, store, rtype, fields):
+    def find(self, store, rtype, fields=None):
         """Find records from a store."""
 
-        return list(store.data.values())
+        result = list(
+            record for record in store.data.values() if isinstance(record, rtype)
+        )
+
+        if fields is not None:
+            result, records = [], result
+            for record in records:
+                raw = record.raw()
+                for key in fields:
+                    if key in raw and fields[key] == raw[key]:
+                        result.append(record)
+
+        return result
 
     def remove(self, store, records):
         """Remove records from a store."""
 
         for record in records:
-            store.data.pop(record.one, None)
+            del store.data[record.one]
 
 
 class MyStore(dict):

@@ -33,6 +33,8 @@ from collections import Iterable
 from ..record.core import Record
 from ..accessor.registry import AccessorRegistry
 
+from six import reraise
+
 
 class Store(Record):
     """Store records.
@@ -90,12 +92,22 @@ class Store(Record):
 
         :param type rtype: record type.
         :param dict fields: record fields to use in a store context.
-        :rtype: Record"""
+        :rtype: Record.
+        :raises: Store.Error in case of error."""
 
-        result = self._getaccessor(rtype).create(
-            store=self, rtype=rtype, fields=fields
-        )
-        self.add(records=[result])
+        try:
+            result = self._getaccessor(rtype).create(
+                store=self, rtype=rtype, fields=fields
+            )
+        except Exception as e:
+            reraise(Store.Error, Store.Error(e))
+
+        else:
+            try:
+                self.add(records=[result])
+
+            except Exception as e:
+                reraise(Store.Error, Store.Error(e))
 
         return result
 
@@ -105,31 +117,39 @@ class Store(Record):
         Register this store to record stores if record is added.
 
         :param list records: records to add. Must be same type.
-        """
+        :raises: Store.Error in case of error."""
 
-        self._getaccessor(records).add(store=self, records=records)
+        accessor = self._getaccessor(records)
 
-        for record in records:
-            record.stores += [self]
+        try:
+            accessor.add(store=self, records=records)
+
+        except Exception as e:
+            reraise(Store.Error, Store.Error(e))
+
+        else:
+            for record in records:
+                record.stores += [self]
 
     def update(self, records, upsert=False):
         """Update records in this store and register this in stores of records.
 
         :param list records: records to update in this store. Must be same type.
         :param bool upsert: if True (False by default), add the record if not
-            exist."""
+            exist.
+        :raises: Store.Error in case of error."""
 
         accessor = self._getaccessor(records)
 
         try:
             accessor.update(store=self, records=records)
 
-        except Exception:
+        except Exception as e:
             if upsert:
                 accessor.add(store=self, records=records)
 
             else:
-                raise
+                reraise(Store.Error, Store.Error(e))
 
         for record in records:
             record.stores += [self]
@@ -142,11 +162,19 @@ class Store(Record):
 
         :param Record record: record to get from this store.
         :return: corresponding record.
-        :rtype: Record"""
+        :rtype: Record
+        :raises: Store.Error in case of error."""
 
-        result = self._getaccessor(record).get(store=self, record=record)
+        accessor = self._getaccessor(record)
 
-        result.stores += [self]
+        try:
+            result = accessor.get(store=self, record=record)
+
+        except Exception as e:
+            reraise(Store.Error, Store.Error(e))
+
+        else:
+            result.stores += [self]
 
         return result
 
@@ -154,22 +182,28 @@ class Store(Record):
 
         return self.get(record=key)
 
-    def find(self, rtype, **fields):
+    def find(self, rtype, fields=None):
         """Find records related to type and fields and register this to result
         stores.
 
         :param type rtype: record type to find.
-        :param dict fields: record fields to filter.
+        :param dict fields: record fields to filter. Default None.
         :return: record of input type and field values.
         :rtype: list
+        :raises: Store.Error in case of error.
         """
 
-        result = self._accreg.get(rtype).find(
-            store=self, rtype=rtype, fields=fields
-        )
+        accessor = self._getaccessor(rtype)
 
-        for record in result:
-            record.stores += [self]
+        try:
+            result = accessor.find(store=self, rtype=rtype, fields=fields)
+
+        except Exception as e:
+            reraise(Store.Error, Store.Error(e))
+
+        else:
+            for record in result:
+                record.stores += [self]
 
         return result
 
@@ -177,13 +211,21 @@ class Store(Record):
         """Remove input record and unregister this store from record stores.
 
         :param Record record: record to remove. Records must be the same type.
+        :raises: Store.Error in case of error.
         """
 
-        self._getaccessor(records).remove(store=self, records=records)
+        accessor = self._getaccessor(records)
 
-        for record in records:
-            while self in record.stores:
-                record.stores.remove(self)
+        try:
+            accessor.remove(store=self, records=records)
+
+        except Exception as e:
+            reraise(Store.Error, Store.Error(e))
+
+        else:
+            for record in records:
+                while self in record.stores:
+                    record.stores.remove(self)
 
     def __delitem__(self, record):
 

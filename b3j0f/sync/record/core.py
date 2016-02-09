@@ -172,8 +172,11 @@ class Record(object):
         if stores is None:
             stores = self._stores
 
-        for store in self._stores:
-            store.remove(records=[self])
+        for store in stores:
+            try:
+                store.remove(records=[self])
+            except Exception:
+                pass
 
     def __del__(self, stores=None):
 

@@ -130,5 +130,46 @@ class StoreTest(UTCase):
 
         self.store.update(records=records, upsert=False)
 
+    def test_get(self):
+
+        record = MyRecord1()
+
+        self.assertRaises(Store.Error, self.store.get, record=record)
+
+        self.store.add(records=[record])
+
+        record2 = self.store.get(record=record)
+
+        self.assertEqual(record2.raw(), record.raw())
+
+    def test_find(self):
+
+        records = self.store.find(rtype=MyRecord1)
+        self.assertFalse(records)
+
+        records = [MyRecord1(two=1), MyRecord1(two=2)]
+
+        self.store.add(records=records)
+
+        records = self.store.find(rtype=MyRecord1)
+        self.assertEqual(len(records), 1)
+
+    def test_remove(self):
+
+        record = MyRecord1()
+
+        self.assertRaises(Store.Error, self.store.get, record=record)
+
+        self.store.add(records=[record])
+
+        record2 = self.store.get(record=record)
+
+        self.assertEqual(record2.raw(), record.raw())
+
+        self.store.remove(records=[record2])
+
+        self.assertFalse(self.store.data)
+
+
 if __name__ == '__main__':
     main()
