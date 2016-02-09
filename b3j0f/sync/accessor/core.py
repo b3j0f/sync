@@ -28,13 +28,15 @@
 
 __all__ = ['Accessor']
 
+from ..record.core import Record
 
-class Accessor(object):
+
+class Accessor(Record):
     """Apply record access rules on stores."""
 
     __rtypes__ = []  #: specify record type accessor implementations.
 
-    def create(self, store, rtype, fields):
+    def create(self, store, rtype, fields=None):
         """Create a record related to store field values.
 
         :param Store store: store from which create a new record.
@@ -48,7 +50,9 @@ class Accessor(object):
         """Add records in a store.
 
         :param Store store: store from which add input records.
-        :param list records: records to add to the store."""
+        :param list records: records to add to the store.
+        :return: added records.
+        :rtype: list"""
 
         raise NotImplementedError()
 
@@ -57,7 +61,11 @@ class Accessor(object):
 
         :param Store store: store where update the records.
         :param list records: records to update in the input store.
-        :param bool upsert: if True (default False), add the record if not exist."""
+        :param bool upsert: if True (default False), add the record if not exist
+        .
+        :return: updated records.
+        :rtype: list
+        """
 
         raise NotImplementedError()
 
@@ -70,17 +78,35 @@ class Accessor(object):
 
         raise NotImplementedError()
 
-    def find(self, store, rtype, fields):
+    def count(self, store, rtype, fields=None):
+        """Get number of data in a store.
+
+        :param Store store: store from where get number of data.
+        :param type rtype: record type.
+        :param dict fields: data content to filter.
+        :rtype: int."""
+
+        raise NotImplementedError()
+
+    def find(self, store, rtype, fields=None, limit=None, skip=None):
         """Find records from a store.
 
+        :param Store store: store from where find data.
+        :param type rtype: record type to retrieve.
+        :param dict fields: data content to filter.
+        :param int limit: maximal number of records to retrieve.
+        :param int skip: number of elements to avoid.
+        :return: records of input type and field values.
         :rtype: list"""
 
         raise NotImplementedError()
 
-    def remove(self, store, records):
+    def remove(self, store, records=None, rtype=None, fields=None):
         """Remove records from a store.
 
         :param Store store: store from where remove records.
-        :param list records: records to remove."""
+        :param list records: records to remove.
+        :param type rtype: record type to remove.
+        :param dict fields: data content to filter."""
 
         raise NotImplementedError()

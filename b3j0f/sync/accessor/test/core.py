@@ -40,21 +40,17 @@ class MyAccessor(Accessor):
     __rtypes__ = []  #: specify record type accessor implementations.
 
     def create(self, store, rtype, fields):
-        """Create a record related to store field values."""
 
         return rtype(**({} if fields is None else fields))
 
     def add(self, store, records):
-        """Add records in a store"""
 
         for record in records:
             store.data[record.one] = record.copy()
 
-    def update(self, store, records, upsert=False):
-        """Update records in a store.
+        return records
 
-        :param Store store: store where update the records.
-        :param bool upsert: if True (default False), add the record if not exist."""
+    def update(self, store, records, upsert=False):
 
         if not upsert:
             for record in records:
@@ -64,13 +60,13 @@ class MyAccessor(Accessor):
         for record in records:
             store.data[record.one] = record.copy()
 
+        return records
+
     def get(self, store, record):
-        """Get a record from a store."""
 
         return store.data[record.one]
 
-    def find(self, store, rtype, fields=None):
-        """Find records from a store."""
+    def find(self, store, rtype, fields=None, limit=None, skip=None):
 
         result = list(
             record for record in store.data.values() if isinstance(record, rtype)
@@ -86,8 +82,7 @@ class MyAccessor(Accessor):
 
         return result
 
-    def remove(self, store, records):
-        """Remove records from a store."""
+    def remove(self, store, records=None, rtype=None, fields=None):
 
         for record in records:
             del store.data[record.one]

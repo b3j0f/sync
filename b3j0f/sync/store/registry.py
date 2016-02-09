@@ -34,8 +34,6 @@ from .core import Store
 class StoreRegistry(Store):
     """Store registry."""
 
-    __rtypes__ = []  #: specify record type accessor implementations.
-
     def __init__(self, _stores=None, *args, **kwargs):
 
         super(StoreRegistry, self).__init__(*args, **kwargs)
@@ -96,7 +94,7 @@ class StoreRegistry(Store):
 
         return result
 
-    def find(self, rtype, fields):
+    def find(self, rtype, fields=None):
         """Find records from a store."""
 
         result = []

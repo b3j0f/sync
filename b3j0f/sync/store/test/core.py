@@ -68,19 +68,19 @@ class StoreTest(UTCase):
 
     def test_getaccessors(self):
 
-        accessor = self.store._getaccessor(records=MyRecord1)
+        accessor = self.store._getaccessor(aparam=MyRecord1)
 
         self.assertIs(accessor, self.myaccessor12)
 
-        accessor = self.store._getaccessor(records=[MyRecord1, MyRecord2])
+        accessor = self.store._getaccessor(aparam=[MyRecord1, MyRecord2])
 
         self.assertIs(accessor, self.myaccessor12)
 
-        accessor = self.store._getaccessor(records=MyRecord1())
+        accessor = self.store._getaccessor(aparam=MyRecord1())
 
         self.assertIs(accessor, self.myaccessor12)
 
-        accessor = self.store._getaccessor(records=[MyRecord1(), MyRecord2()])
+        accessor = self.store._getaccessor(aparam=[MyRecord1(), MyRecord2()])
 
         self.assertIs(accessor, self.myaccessor12)
 

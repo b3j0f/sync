@@ -30,15 +30,16 @@ __all__ = ['Record']
 
 from inspect import getmembers
 
-from .field import Field
-
 from six import add_metaclass
 
 from copy import deepcopy
 
+from .field import Field
+
 
 class _MetaRecord(type):
-    """Apply field descriptors on record field values."""
+    """Apply field descriptors on record field values and ensure records are
+    commited at the end of their initialization."""
 
     def __call__(cls, *args, **kwargs):
 
@@ -61,7 +62,19 @@ class _MetaRecord(type):
 
 @add_metaclass(_MetaRecord)
 class Record(object):
-    """Record object which embeds data values."""
+    """Record object which embeds data values and bound to stores.
+
+    Data values are all public attributes (given in the constructor such as the
+    main kwargs parameter or setted at runtime).
+
+    All those public attributes can be retrieved thanks to the raw method.
+
+    Once a record is bound to a store, it is possible to sequentially modify
+    data values, and commit change in the store with the commit method, or
+    cancel changes with the change method.
+
+    The property ``isdirty`` is True if the record is modified from its creation
+    or last commit."""
 
     class Error(Exception):
         """Handle record errors."""
@@ -138,7 +151,9 @@ class Record(object):
 
     @stores.setter
     def stores(self, value):
-        """Change of stores value."""
+        """Change of stores value.
+
+        :param list stores: stores to use."""
 
         self._stores = value
 
@@ -166,8 +181,7 @@ class Record(object):
         """Remove this record from stores.
 
         :param list stores: stores where to delete this record. This stores by
-            default.
-        """
+            default."""
 
         if stores is None:
             stores = self._stores
@@ -202,7 +216,8 @@ class Record(object):
         """Get raw data value.
 
         :param bool dirty: if True (False by default) get dirty values in raw.
-        :param dict _raws: private parameter used to save rawed records.
+        :param dict _raws: private parameter used to save rawed records in a
+            recursive call.
         :rtype: dict."""
 
         result = deepcopy(self._fields)

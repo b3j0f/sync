@@ -65,7 +65,7 @@ Features
 The global architecture is composed of four classes::
 
    - Record: pivot data to persist in heterogeneous stores. Keep a transparent reference to stores in order to ensure easy synchronization and consistency among stores.
-   - Store: set of records with accessors. To specialize to a database, CMDB, project management system, etc. depending on your needs.
+   - Store: set of data with CRUD operations. CRUD operations are delegated to specific Accessors. To specialize to a database, CMDB, project management system, etc. depending on your needs.
    - Accessor: implementation of record CRUD operations in a store.
    - FieldDescriptor: specify record field type and default value.
 
@@ -80,21 +80,9 @@ Examples
 
 - `b3j0f.dmts`_: development management tool synchronizer.
 
-Limitations
-===========
-
-Name limitation
----------------
-
-In order to ensure data consistency among several stores, the system choose to find any data from its name and context name (aka, name of embedding data).
-
-Therefore, this system is not able to synchronize data which are of the same type of other data, in the same context, and with the same name.
-
 Perspectives
 ============
 
-- break the `name limitation`_ with a store dedicated to ensure correspondance between store data ids.
-- use a data id of type int instead of type str, for memory reasons.
 - wait feedbacks during 6 months before passing it to a stable version.
 - Cython implementation.
 
@@ -108,6 +96,3 @@ Donation
 .. _Homepage: https://github.com/b3j0f/sync
 .. _Documentation: http://b3j0fsync.readthedocs.org/en/master/
 .. _PyPI: https://pypi.python.org/pypi/b3j0f.sync/
-
-.. _`b3j0f.conf`: https://github.com/b3j0f/conf
-.. _`b3j0f.dmts`: https://github.com/b3j0f/dmts
