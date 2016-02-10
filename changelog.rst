@@ -4,7 +4,7 @@ ChangeLog
 0.1.0 (2016/02/06)
 ------------------
 
-- change the entire API in order to simpligy code and concepts.
+- change the entire API in order to simplify code and concepts.
 
 0.0.4 (2015/10/04)
 ------------------

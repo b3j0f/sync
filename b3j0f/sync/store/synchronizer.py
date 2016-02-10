@@ -28,7 +28,7 @@
 
 __all__ = ['Synchronizer']
 
-from .store.core import Store
+from .core import Store
 
 from six import reraise
 
