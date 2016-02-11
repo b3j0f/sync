@@ -35,6 +35,7 @@ class Field(object):
     def __init__(
             self,
             ftype=object, default=None, description=None, identifier=False,
+            unique=False, length=None,
             *args, **kwargs
     ):
         """
@@ -43,6 +44,8 @@ class Field(object):
         :param str description: field description.
         :param bool identifiers: boolean flag about identifier field. An
             identifier can be used to generate an index for example.
+        :param bool unique: is field value unique among record of same types.
+        :param int length: value length in case of variable size type.
         """
 
         super(Field, self).__init__(*args, **kwargs)
@@ -52,6 +55,8 @@ class Field(object):
         self.default = self.getvalue(default)
         self.description = description
         self.identifier = identifier
+        self.unique = unique
+        self.length = length
 
     def getvalue(self, value, name=None):
         """Get final value which corresponds to input value or default value if

@@ -127,7 +127,7 @@ class RecordTest(UTCase):
 
         copy = self.myrecord.copy()
 
-        for name in copy._fields:
+        for name in copy._data:
             self.assertEqual(getattr(copy, name), getattr(self.myrecord, name))
 
         self.assertTrue(self.myrecord.stores)
@@ -137,30 +137,30 @@ class RecordTest(UTCase):
 
         self.assertTrue(copy.stores)
 
-        copy = self.myrecord.copy(fields={'test': 1})
+        copy = self.myrecord.copy(data={'test': 1})
         self.assertEqual(copy.test, 1)
 
     def test_raw(self):
 
-        fields = self.myrecord._fields.copy()
+        data = self.myrecord._data.copy()
 
         raw = self.myrecord.raw(dirty=False)
 
-        self.assertEqual(raw, fields)
+        self.assertEqual(raw, data)
 
         raw = self.myrecord.raw(dirty=True)
 
-        self.assertEqual(raw, fields)
+        self.assertEqual(raw, data)
 
         self.myrecord.two = 5
 
         raw = self.myrecord.raw(dirty=False)
 
-        self.assertEqual(raw, fields)
+        self.assertEqual(raw, data)
 
         raw = self.myrecord.raw(dirty=True)
 
-        self.assertNotEqual(raw, fields)
+        self.assertNotEqual(raw, data)
         self.assertEqual(raw['two'], 5)
 
 

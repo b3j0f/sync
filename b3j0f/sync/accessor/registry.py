@@ -28,12 +28,14 @@
 
 __all__ = ['AccessorRegistry']
 
-from .core import Accessor
 from ..record import Record
 
 
 class AccessorRegistry(dict):
-    """In charge of register accessors."""
+    """In charge of register accessors.
+
+    Accessors are registered related to record type such as python class or
+    record name (a collection name for example)."""
 
     def __init__(self, accessors=None, *args, **kwargs):
 

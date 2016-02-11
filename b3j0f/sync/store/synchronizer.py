@@ -56,12 +56,12 @@ class Synchronizer(Store):
         )
 
     def synchronize(
-            self, rtype, fields=None, source=None, targets=None, count=None
+            self, rtype, data=None, source=None, targets=None, count=None
     ):
         """Synchronize the source store with target stores.
 
         :param type rtype: record type to synchronize.
-        :param dict fields: matching data content to retrieve from the source.
+        :param dict data: matching data content to retrieve from the source.
         :param Store source: store from where get data.
         :param list targets: stores from where put data.
         :param int count: number of data to synchronize iteratively.
@@ -80,7 +80,7 @@ class Synchronizer(Store):
 
         while True:
             records = source.find(
-                rtype=rtype, fields=fields, skip=skip, limit=count
+                rtype=rtype, data=data, skip=skip, limit=count
             )
             if records:
                 for target in targets:
@@ -128,15 +128,15 @@ class Synchronizer(Store):
 
         return result
 
-    def create(self, rtype, fields=None):
+    def create(self, rtype, data=None):
         """Create a record from the source store.
 
         :param type rtype: records type to create from the store.
-        :param dict fields: specific values to use such as the store data
+        :param dict data: specific values to use such as the store data
             content."""
 
         return self._execute(
-            func='create', source=True, rtype=rtype, fields=fields
+            func='create', source=True, rtype=rtype, data=data
         )
 
     def add(self, records):
@@ -165,7 +165,7 @@ class Synchronizer(Store):
 
         return self._execute(func='get', record=record, source=True)
 
-    def find(self, rtype, fields, limit=None, skip=None):
+    def find(self, rtype, data, limit=None, skip=None):
         """Find records from the source.
 
         :param int limit: maximal number of records to retrieve.
@@ -174,17 +174,17 @@ class Synchronizer(Store):
 
         return self._execute(
             func='find', source=True,
-            rtype=rtype, fields=fields, limit=limit, skip=skip
+            rtype=rtype, data=data, limit=limit, skip=skip
         )
 
-    def remove(self, records=None, rtype=None, fields=None):
+    def remove(self, records=None, rtype=None, data=None):
         """Remove records from target stores.
 
         :param list records: records to remove.
         :param type rtype: record type to remove.
-        :param dict fields: data content to filter."""
+        :param dict data: data content to filter."""
 
         return self._execute(
             func='remove', source=False,
-            records=records, rtype=rtype, fields=fields
+            records=records, rtype=rtype, data=data
         )

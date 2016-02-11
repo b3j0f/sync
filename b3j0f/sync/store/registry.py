@@ -40,14 +40,14 @@ class StoreRegistry(Store):
 
         self._stores = [] if _stores is None else _stores
 
-    def create(self, rtype, fields):
+    def create(self, rtype, data):
         """Create a record related to store data field values."""
 
         result = None
 
         for store in self._stores:
             try:
-                result = store.create(rtype=rtype, fields=fields)
+                result = store.create(rtype=rtype, data=data)
 
             except Exception:
                 pass
@@ -94,13 +94,13 @@ class StoreRegistry(Store):
 
         return result
 
-    def find(self, rtype, fields=None):
+    def find(self, rtype, data=None):
         """Find records from a store."""
 
         result = []
 
         for store in self._stores:
-            result += store.find(rtype=rtype, fields=fields)
+            result += store.find(rtype=rtype, data=data)
 
         return result
 

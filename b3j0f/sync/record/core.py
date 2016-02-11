@@ -79,19 +79,19 @@ class Record(object):
     class Error(Exception):
         """Handle record errors."""
 
-    __slots__ = ('_stores', '_fields', '_oldfields')
+    __slots__ = ('_stores', '_data', '_olddata')
 
-    def __init__(self, _stores=None, **fields):
+    def __init__(self, _stores=None, **data):
         """
         :param Stores stores: stores to use in this record.
-        :param fields: record field values.
+        :param data: record field values.
         """
 
         super(Record, self).__init__()
 
         self._stores = [] if _stores is None else _stores
-        self._oldfields = {}
-        self._fields = fields
+        self._olddata = {}
+        self._data = data
 
     def __setattr__(self, key, value):
 
@@ -109,16 +109,16 @@ class Record(object):
             if isinstance(fielddesc, Field):
                 value = fielddesc.getvalue(value, name=key)
 
-            oldvalue = self._fields.get(key)
+            oldvalue = self._data.get(key)
 
             if oldvalue != value:
 
-                self._fields[key] = value
-                self._oldfields.setdefault(key, oldvalue)
+                self._data[key] = value
+                self._olddata.setdefault(key, oldvalue)
 
     def __getattribute__(self, key):
 
-        return object.__getattribute__(self, '_fields').get(
+        return object.__getattribute__(self, '_data').get(
             key, object.__getattribute__(self, key)
         )
 
@@ -128,7 +128,7 @@ class Record(object):
         result = None
 
         try:
-            result = self._fields[key]
+            result = self._data[key]
 
         except KeyError:
             raise Record.Error('No field {0}'.format(key))
@@ -141,7 +141,7 @@ class Record(object):
 
         :rtype: bool"""
 
-        return not not self._oldfields
+        return not not self._olddata
 
     @property
     def stores(self):
@@ -160,8 +160,8 @@ class Record(object):
     def cancel(self):
         """Cancel modifications."""
 
-        self._fields.update(self._oldfields)
-        self._oldfields.clear()
+        self._data.update(self._olddata)
+        self._olddata.clear()
 
     def commit(self, stores=None):
         """Apply new values on stores.
@@ -175,7 +175,7 @@ class Record(object):
         for store in stores:
             store.update(records=[self], upsert=True)
 
-        self._oldfields.clear()
+        self._olddata.clear()
 
     def delete(self, stores=None):
         """Remove this record from stores.
@@ -196,21 +196,21 @@ class Record(object):
 
         self.delete(stores=stores)
 
-    def copy(self, fields=None, stores=None):
+    def copy(self, data=None, stores=None):
         """Copy this record with input data values.
 
         Stores are not copied.
 
-        :param dict fields: new data content to use.
+        :param dict data: new data content to use.
         :param list stores: default stores to use.
         :rtype: Record"""
 
-        _fields = self._fields
+        _data = self._data
 
-        if fields is not None:
-            _fields.update(fields)
+        if data is not None:
+            _data.update(data)
 
-        return self.__class__(_stores=stores, **deepcopy(_fields))
+        return self.__class__(_stores=stores, **deepcopy(_data))
 
     def raw(self, dirty=False, _raws=None):
         """Get raw data value.
@@ -220,10 +220,10 @@ class Record(object):
             recursive call.
         :rtype: dict."""
 
-        result = deepcopy(self._fields)
+        result = deepcopy(self._data)
 
         if not dirty:
-            result.update(deepcopy(self._oldfields))
+            result.update(deepcopy(self._olddata))
 
         for name in result.keys():  # convert inner data to raw
             value = result[name]

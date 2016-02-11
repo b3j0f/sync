@@ -92,7 +92,7 @@ class StoreTest(UTCase):
 
         record = self.store.create(
             rtype=MyRecord1,
-            fields={'three': 3, 'two': MyRecord1.two.default * 2}
+            data={'three': 3, 'two': MyRecord1.two.default * 2}
         )
 
         self.assertEqual(record.one, MyRecord1.one.default)

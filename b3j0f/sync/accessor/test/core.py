@@ -39,9 +39,9 @@ class MyAccessor(Accessor):
 
     __rtypes__ = []  #: specify record type accessor implementations.
 
-    def create(self, store, rtype, fields):
+    def create(self, store, rtype, data):
 
-        return rtype(**({} if fields is None else fields))
+        return rtype(**({} if data is None else data))
 
     def add(self, store, records):
 
@@ -66,23 +66,23 @@ class MyAccessor(Accessor):
 
         return store.data[record.one]
 
-    def find(self, store, rtype, fields=None, limit=None, skip=None):
+    def find(self, store, rtype, data=None, limit=None, skip=None):
 
         result = list(
             record for record in store.data.values() if isinstance(record, rtype)
         )
 
-        if fields is not None:
+        if data is not None:
             result, records = [], result
             for record in records:
                 raw = record.raw()
-                for key in fields:
-                    if key in raw and fields[key] == raw[key]:
+                for key in data:
+                    if key in raw and data[key] == raw[key]:
                         result.append(record)
 
         return result
 
-    def remove(self, store, records=None, rtype=None, fields=None):
+    def remove(self, store, records=None, rtype=None, data=None):
 
         for record in records:
             del store.data[record.one]
@@ -107,7 +107,7 @@ class AccessorTest(UTCase):
     def test_create(self):
 
         record = self.accessor.create(
-            store=self.store, rtype=MyRecord, fields={}
+            store=self.store, rtype=MyRecord, data={}
         )
 
         self.assertEqual(record.one, MyRecord.one.default)
@@ -148,14 +148,14 @@ class AccessorTest(UTCase):
     def test_find(self):
 
         records = self.accessor.find(
-            store=self.store, rtype=MyRecord, fields={'one': 1}
+            store=self.store, rtype=MyRecord, data={'one': 1}
         )
 
         self.assertFalse(records)
 
         self.accessor.add(store=self.store, records=[self.record])
         records = self.accessor.find(
-            store=self.store, rtype=MyRecord, fields={'one': 1}
+            store=self.store, rtype=MyRecord, data={'one': 1}
         )
 
         self.assertTrue(records)

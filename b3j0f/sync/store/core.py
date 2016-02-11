@@ -126,15 +126,15 @@ class Store(Record):
 
         return result
 
-    def create(self, rtype, fields=None):
+    def create(self, rtype, data=None):
         """Create a record with input type and field values.
 
         :param type rtype: record type.
-        :param dict fields: record fields to use in a store context.
+        :param dict data: record data to use in a store context.
         :rtype: Record.
         :raises: Store.Error in case of error."""
 
-        result = self._execute(func='create', rtype=rtype, fields=fields)
+        result = self._execute(func='create', rtype=rtype, data=data)
 
         self.add(records=[result])
 
@@ -187,21 +187,21 @@ class Store(Record):
 
         return self.get(record=key)
 
-    def count(self, rtype, fields=None):
+    def count(self, rtype, data=None):
         """Get number of data in a store.
 
         :param type rtype: record type.
-        :param dict fields: data content to filter.
+        :param dict data: data content to filter.
         :rtype: int."""
 
-        return self._execute(func='count', rtype=rtype, fields=fields)
+        return self._execute(func='count', rtype=rtype, data=data)
 
-    def find(self, rtype, fields=None, limit=None, skip=None):
-        """Find records related to type and fields and register this to result
+    def find(self, rtype, data=None, limit=None, skip=None):
+        """Find records related to type and data and register this to result
         stores.
 
         :param type rtype: record type to find.
-        :param dict fields: record fields to filter. Default None.
+        :param dict data: record data to filter. Default None.
         :param int limit: maximal number of documents to retrieve.
         :param int skip: number of elements to avoid.
         :return: records of input type and field values.
@@ -210,22 +210,22 @@ class Store(Record):
         """
 
         result = self._execute(
-            func='find', rtype=rtype, fields=fields, limit=limit, skip=skip
+            func='find', rtype=rtype, data=data, limit=limit, skip=skip
         )
 
         return result
 
-    def remove(self, records, rtype=None, fields=None):
+    def remove(self, records, rtype=None, data=None):
         """Remove input record and unregister this store from record stores.
 
         :param list records: records to remove.
         :param type rtype: record type to remove.
-        :param dict fields: data content to filter.
+        :param dict data: data content to filter.
         :raises: Store.Error in case of error.
         """
 
         result = self._execute(
-            func='remove', rtype=rtype, records=records, fields=fields
+            func='remove', rtype=rtype, records=records, data=data
         )
 
         for record in records:

@@ -36,12 +36,12 @@ class Accessor(Record):
 
     __rtypes__ = []  #: specify record type accessor implementations.
 
-    def create(self, store, rtype, fields=None):
+    def create(self, store, rtype, data=None):
         """Create a record related to store field values.
 
         :param Store store: store from which create a new record.
         :param type rtype: records type to create from the store.
-        :param dict fields: specific values to use such as the store data
+        :param dict data: specific values to use such as the store data
             content."""
 
         raise NotImplementedError()
@@ -78,22 +78,22 @@ class Accessor(Record):
 
         raise NotImplementedError()
 
-    def count(self, store, rtype, fields=None):
+    def count(self, store, rtype, data=None):
         """Get number of data in a store.
 
         :param Store store: store from where get number of data.
         :param type rtype: record type.
-        :param dict fields: data content to filter.
+        :param dict data: data content to filter.
         :rtype: int."""
 
         raise NotImplementedError()
 
-    def find(self, store, rtype, fields=None, limit=None, skip=None):
+    def find(self, store, rtype, data=None, limit=None, skip=None):
         """Find records from a store.
 
         :param Store store: store from where find data.
         :param type rtype: record type to retrieve.
-        :param dict fields: data content to filter.
+        :param dict data: data content to filter.
         :param int limit: maximal number of records to retrieve.
         :param int skip: number of elements to avoid.
         :return: records of input type and field values.
@@ -101,12 +101,12 @@ class Accessor(Record):
 
         raise NotImplementedError()
 
-    def remove(self, store, records=None, rtype=None, fields=None):
+    def remove(self, store, records=None, rtype=None, data=None):
         """Remove records from a store.
 
         :param Store store: store from where remove records.
         :param list records: records to remove.
         :param type rtype: record type to remove.
-        :param dict fields: data content to filter."""
+        :param dict data: data content to filter."""
 
         raise NotImplementedError()
