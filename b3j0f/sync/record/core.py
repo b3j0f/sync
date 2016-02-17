@@ -188,7 +188,8 @@ class Record(object):
 
         for store in stores:
             try:
-                store.remove(records=[self])
+                store.delete(records=[self])
+
             except Exception:
                 pass
 
@@ -212,28 +213,36 @@ class Record(object):
 
         return self.__class__(_stores=stores, **deepcopy(_data))
 
-    def raw(self, dirty=False, _raws=None):
+    def raw(self, dirty=True, store=None, _raws=None):
         """Get raw data value.
 
-        :param bool dirty: if True (False by default) get dirty values in raw.
+        :param bool dirty: if True (default) get dirty values in raw.
         :param dict _raws: private parameter used to save rawed records in a
             recursive call.
-        :rtype: dict."""
+        :param Store store: store from where get the raw if given.
+        :return: specific store data if store is not None, otherwise a
+            dictionary with public values."""
 
-        result = deepcopy(self._data)
+        result = None
 
-        if not dirty:
-            result.update(deepcopy(self._olddata))
+        if store is None:
+            result = deepcopy(self._data)
 
-        for name in result.keys():  # convert inner data to raw
-            value = result[name]
-            if isinstance(value, Record):
-                if _raws is None:
-                    _raws = {}
-                value = _raws[value] = _raws.setdefault(
-                    value, value.raw(dirty=dirty, _raws=_raws)
-                )
-                result[name] = value
+            if not dirty:
+                result.update(deepcopy(self._olddata))
+
+            for name in result.keys():  # convert inner records to raw
+                value = result[name]
+                if isinstance(value, Record):
+                    if _raws is None:
+                        _raws = {}
+                    value = _raws[value] = _raws.setdefault(
+                        value, value.raw(dirty=dirty, _raws=_raws)
+                    )
+                    result[name] = value
+
+        else:
+           result = store.raw(dirty=dirty, record=self)
 
         return result
 

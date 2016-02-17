@@ -40,14 +40,14 @@ class StoreRegistry(Store):
 
         self._stores = [] if _stores is None else _stores
 
-    def create(self, rtype, data):
+    def record(self, rtype, data):
         """Create a record related to store data field values."""
 
         result = None
 
         for store in self._stores:
             try:
-                result = store.create(rtype=rtype, data=data)
+                result = store.record(rtype=rtype, data=data)
 
             except Exception:
                 pass
@@ -57,7 +57,7 @@ class StoreRegistry(Store):
 
         return result
 
-    def add(self, records):
+    def remove(self, records):
         """Add input record(s) in a store"""
 
         for store in self._stores:

@@ -42,7 +42,7 @@ class MyRecord(Record):
 
 class MyStore(object):
 
-    def remove(self, *args, **kwargs):
+    def delete(self, *args, **kwargs):
         pass
 
     def update(self, *args, **kwargs):

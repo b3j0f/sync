@@ -86,11 +86,11 @@ class StoreTest(UTCase):
 
     def test_create(self):
 
-        record = self.store.create(rtype=MyRecord1)
+        record = self.store.record(rtype=MyRecord1)
 
         self.assertEqual(record.one, MyRecord1.one.default)
 
-        record = self.store.create(
+        record = self.store.record(
             rtype=MyRecord1,
             data={'three': 3, 'two': MyRecord1.two.default * 2}
         )

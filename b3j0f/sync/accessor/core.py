@@ -36,7 +36,17 @@ class Accessor(Record):
 
     __rtypes__ = []  #: specify record type accessor implementations.
 
-    def create(self, store, rtype, data=None):
+    def raw(self, store, record, dirty=True):
+        """Get a specific store data from a record.
+
+        :param Store store: store from where get input record.
+        :param Record record: record to convert to a data.
+        :param bool dirty: if True (default) get dirty values in raw.
+        """
+
+        raise NotImplementedError()
+
+    def record(self, store, rtype, data=None):
         """Create a record related to store field values.
 
         :param Store store: store from which create a new record.
@@ -104,7 +114,7 @@ class Accessor(Record):
     def remove(self, store, records=None, rtype=None, data=None):
         """Remove records from a store.
 
-        :param Store store: store from where remove records.
+        :param Store store: store from which remove records.
         :param list records: records to remove.
         :param type rtype: record type to remove.
         :param dict data: data content to filter."""

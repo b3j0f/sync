@@ -39,7 +39,11 @@ class MyAccessor(Accessor):
 
     __rtypes__ = []  #: specify record type accessor implementations.
 
-    def create(self, store, rtype, data):
+    def raw(self, store, record, dirty):
+
+        return record.raw(dirty=dirty)
+
+    def record(self, store, rtype, data):
 
         return rtype(**({} if data is None else data))
 
@@ -106,7 +110,7 @@ class AccessorTest(UTCase):
 
     def test_create(self):
 
-        record = self.accessor.create(
+        record = self.accessor.record(
             store=self.store, rtype=MyRecord, data={}
         )
 

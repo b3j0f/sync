@@ -111,22 +111,31 @@ class Store(Record):
         try:
             result = getattr(accessor, func)(store=self, **kwargs)
 
-        except Exception as e:
-            reraise(Store.Error, Store.Error(e))
+        except Exception as ex:
+            reraise(Store.Error, Store.Error(ex))
 
         else:
             if isinstance(result, Iterable):
                 for record in result:
-                    if self not in record.stores:
+                    if isinstance(record, Record) and self not in record.stores:
                         record.stores.append(self)
 
-            elif isinstance(result, Record):
-                if self not in result.stores:
-                    result.stores.append(self)
+            elif isinstance(result, Record) and self not in result.stores:
+                result.stores.append(self)
 
         return result
 
-    def create(self, rtype, data=None):
+    def raw(self, store, record, dirty=True):
+        """Get a specific store data from a record.
+
+        :param Store store: store from where get input record.
+        :param Record record: record to convert to a data.
+        :param bool dirty: if True (default) get dirty values in raw.
+        """
+
+        return self._execute(func='raw', record=record, dirty=dirty)
+
+    def record(self, rtype, data=None):
         """Create a record with input type and field values.
 
         :param type rtype: record type.
@@ -134,11 +143,7 @@ class Store(Record):
         :rtype: Record.
         :raises: Store.Error in case of error."""
 
-        result = self._execute(func='create', rtype=rtype, data=data)
-
-        self.add(records=[result])
-
-        return result
+        return self._execute(func='record', rtype=rtype, data=data)
 
     def add(self, records):
         """Add records and register this in stores of records.
@@ -150,9 +155,7 @@ class Store(Record):
         :rtype: list
         :raises: Store.Error in case of error."""
 
-        result = self._execute(func='add', records=records)
-
-        return result
+        return self._execute(func='add', records=records)
 
     def update(self, records, upsert=False):
         """Update records in this store and register this in stores of records.
@@ -164,9 +167,7 @@ class Store(Record):
         :rtype: list
         :raises: Store.Error in case of error."""
 
-        result = self._execute(func='update', records=records, upsert=upsert)
-
-        return result
+        return self._execute(func='update', records=records, upsert=upsert)
 
     def get(self, record):
         """Get input record from this store.
@@ -179,9 +180,7 @@ class Store(Record):
         :rtype: Record
         :raises: Store.Error in case of error."""
 
-        result = self._execute(func='get', record=record)
-
-        return result
+        return self._execute(func='get', record=record)
 
     def __getitem__(self, key):
 
@@ -209,14 +208,12 @@ class Store(Record):
         :raises: Store.Error in case of error.
         """
 
-        result = self._execute(
+        return self._execute(
             func='find', rtype=rtype, data=data, limit=limit, skip=skip
         )
 
-        return result
-
     def remove(self, records, rtype=None, data=None):
-        """Remove input record and unregister this store from record stores.
+        """Remove input record from this.
 
         :param list records: records to remove.
         :param type rtype: record type to remove.
