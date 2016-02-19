@@ -39,11 +39,11 @@ class MyAccessor(Accessor):
 
     __rtypes__ = []  #: specify record type accessor implementations.
 
-    def raw(self, store, record, dirty):
+    def record2data(self, store, record, dirty):
 
         return record.raw(dirty=dirty)
 
-    def record(self, store, rtype, data):
+    def data2record(self, store, rtype, data):
 
         return rtype(**({} if data is None else data))
 
@@ -110,7 +110,7 @@ class AccessorTest(UTCase):
 
     def test_create(self):
 
-        record = self.accessor.record(
+        record = self.accessor.data2record(
             store=self.store, rtype=MyRecord, data={}
         )
 

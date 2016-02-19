@@ -242,7 +242,7 @@ class Record(object):
                     result[name] = value
 
         else:
-           result = store.raw(dirty=dirty, record=self)
+           result = store.record2data(dirty=dirty, record=self)
 
         return result
 

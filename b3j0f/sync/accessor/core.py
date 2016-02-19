@@ -34,20 +34,22 @@ from ..record.core import Record
 class Accessor(Record):
     """Apply record access rules on stores."""
 
+    class Error(Exception):
+        """Handle accessor errors."""
+
     __rtypes__ = []  #: specify record type accessor implementations.
 
-    def raw(self, store, record, dirty=True):
+    def record2data(self, store, record, dirty=True):
         """Get a specific store data from a record.
 
         :param Store store: store from where get input record.
         :param Record record: record to convert to a data.
-        :param bool dirty: if True (default) get dirty values in raw.
-        """
+        :param bool dirty: if True (default) get dirty values in raw."""
 
         raise NotImplementedError()
 
-    def record(self, store, rtype, data=None):
-        """Create a record related to store field values.
+    def data2record(self, store, rtype, data=None):
+        """Create a record related to specific store data.
 
         :param Store store: store from which create a new record.
         :param type rtype: records type to create from the store.

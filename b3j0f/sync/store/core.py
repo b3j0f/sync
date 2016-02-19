@@ -39,7 +39,10 @@ from six import reraise
 class Store(Record):
     """Store records.
 
-    A Store can be a database or a github account for example."""
+    A Store can be a database or a github account for example.
+
+    Beceause it is mainly an interface, results are sorted by store in order
+    to identify which real store corresponds to results."""
 
     class Error(Exception):
         """Handle Store errors."""
@@ -125,25 +128,24 @@ class Store(Record):
 
         return result
 
-    def raw(self, store, record, dirty=True):
+    def record2data(self, record, dirty=True):
         """Get a specific store data from a record.
 
-        :param Store store: store from where get input record.
         :param Record record: record to convert to a data.
-        :param bool dirty: if True (default) get dirty values in raw.
+        :param bool dirty: if True (default) get dirty values in record2data.
         """
 
-        return self._execute(func='raw', record=record, dirty=dirty)
+        return self._execute(func='record2data', record=record, dirty=dirty)
 
-    def record(self, rtype, data=None):
-        """Create a record with input type and field values.
+    def data2record(self, rtype, data=None):
+        """Create a record with input type and store data values.
 
         :param type rtype: record type.
         :param dict data: record data to use in a store context.
         :rtype: Record.
         :raises: Store.Error in case of error."""
 
-        return self._execute(func='record', rtype=rtype, data=data)
+        return self._execute(func='data2record', rtype=rtype, data=data)
 
     def add(self, records):
         """Add records and register this in stores of records.

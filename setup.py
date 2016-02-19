@@ -29,11 +29,9 @@
 
 from setuptools import setup, find_packages
 
-from os.path import abspath, dirname, join, expanduser
+from os.path import abspath, dirname, join
 
 from re import compile as re_compile, S as re_S
-
-from pip.req import parse_requirements
 
 NAME = 'b3j0f.sync'  # library name
 
@@ -58,9 +56,9 @@ KEYWORDS = [
     'sync', 'observer', 'record', 'interoperability'
 ]
 
-DEPENDENCIES = [
-    str(ir.req) for ir in parse_requirements('requirements.txt', session=False)
-]
+DEPENDENCIES = []
+with open(join(BASEPATH, 'requirements.txt')) as f:
+    DEPENDENCIES = list(line for line in f.readlines())
 
 DESCRIPTION = 'Synchronizer design pattern library'
 
