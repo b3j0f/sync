@@ -34,6 +34,8 @@ from six import add_metaclass, string_types
 
 from copy import deepcopy
 
+from b3j0f.utils.iterable import hashiter
+
 from .field import Field
 
 
@@ -93,7 +95,7 @@ class Record(object):
 
         self._data = data
         self._olddata = {}
-        self._stores = set() if _stores is None else _stores
+        self._stores = set() if _stores is None else set(_stores)
 
     def __setattr__(self, key, value):
 
@@ -163,6 +165,12 @@ class Record(object):
         """Cancel modifications."""
 
         self._data.update(self._olddata)
+        for key in list(self._data):
+            val = self._data[key]
+
+            if val is None:
+                del self._data[key]
+
         self._olddata.clear()
 
     def commit(self, stores=None):
@@ -174,8 +182,10 @@ class Record(object):
         if stores is None:
             stores = self._stores
 
-        for store in stores:
+        for store in list(stores):
             store.update(records=[self], upsert=True)
+
+            self._stores.add(store)
 
         self._olddata.clear()
 
@@ -188,16 +198,23 @@ class Record(object):
         if stores is None:
             stores = self._stores
 
-        for store in stores:
+        for store in list(stores):
             try:
                 store.remove(records=[self])
 
             except Exception:
                 pass
 
-    def __del__(self, stores=None):
+            else:
+                try:
+                    self._stores.remove(store)
 
-        self.delete(stores=stores)
+                except KeyError:
+                    pass
+
+    def __del__(self):
+
+        self.delete()
 
     def copy(self, data=None, stores=None):
         """Copy this record with input data values.
@@ -236,7 +253,6 @@ class Record(object):
         result = None
 
         if store is None:
-            print('OOOO', self._data)
             result = deepcopy(self._data)
 
             if not dirty:
@@ -259,7 +275,7 @@ class Record(object):
 
     def __eq__(self, other):
 
-        return cmp(self, other) == 0
+        return hash(self) == hash(other)
 
     def __ne__(self, other):
 
@@ -276,11 +292,6 @@ class Record(object):
 
     def __hash__(self):
 
-        result = hash(self.__class__)
-
-        raw = self.raw()
-        for name in raw:
-            print(name)
-            result += hash(raw[name])
+        result = hash(self.__class__) * hashiter(self.raw())
 
         return result

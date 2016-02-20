@@ -46,7 +46,7 @@ class MyStore(object):
 
         super(MyStore, self).__init__(*args, **kwargs)
 
-        self.records = []
+        self.records = set()
 
     def remove(self, records, *args, **kwargs):
 
@@ -54,7 +54,7 @@ class MyStore(object):
 
     def update(self, records, *args, **kwargs):
 
-        self.records += records
+        self.records.add(records[0].copy())
 
 
 class RecordTest(UTCase):
@@ -122,32 +122,37 @@ class RecordTest(UTCase):
 
         self.myrecord.a = 1
 
-    def test_commit_delete(self):
+    def test_commit(self):
 
         self.assertFalse(self.mystore.records)
 
         self.myrecord.commit(stores=[self.mystore])
 
-        self.assertEqual(self.mystore.records, [self.myrecord])
+        self.assertIn(self.myrecord, self.mystore.records)
 
         self.myrecord.a = 2
 
-        self.assertEqual(self.mystore.records, [self.myrecord])
+        self.assertNotIn(self.myrecord, self.mystore.records)
 
         self.myrecord.commit(stores=[self.mystore])
 
-        self.assertEqual(self.mystore.records, [self.myrecord, self.myrecord])
+        self.assertIn(self.myrecord, self.mystore.records)
+        self.assertEqual(len(self.mystore.records), 2)
 
     def test_delete(self):
 
         self.assertFalse(self.mystore.records)
 
         self.myrecord.commit(stores=[self.mystore])
-
-        self.assertEqual(self.mystore.records, [self.myrecord])
+        self.assertIn(self.myrecord, self.mystore.records)
 
         self.myrecord.delete(stores=[self.mystore])
+        self.assertFalse(self.mystore.records)
 
+        self.myrecord.commit(stores=[self.mystore])
+        self.assertIn(self.myrecord, self.mystore.records)
+
+        del self.myrecord
         self.assertFalse(self.mystore.records)
 
     def test_copy(self):
@@ -191,6 +196,18 @@ class RecordTest(UTCase):
 
         self.assertNotEqual(raw, data)
         self.assertEqual(raw['two'], 5)
+
+    def test_eq(self):
+
+        myrecord1 = MyRecord()
+        myrecord2 = MyRecord()
+        self.assertEqual(myrecord1, myrecord2)
+
+        myrecord1.a = 2
+        self.assertNotEqual(myrecord1, myrecord2)
+
+        myrecord1.cancel()
+        self.assertEqual(myrecord1, myrecord2)
 
 
 if __name__ == '__main__':

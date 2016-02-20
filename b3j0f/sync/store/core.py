@@ -124,7 +124,7 @@ class Store(Record):
                         record.stores.add(self)
 
             elif isinstance(result, Record) and result not in self:
-                result.stores.append(self)
+                result.stores.add(self)
 
         return result
 
