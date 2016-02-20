@@ -64,7 +64,7 @@ class _MetaRecord(type):
 
 @add_metaclass(_MetaRecord)
 class Record(object):
-    """Record object which embeds data values and bound to stores.
+    """Embed a data value such as a dictionary.
 
     Data values are all public attributes (given in the constructor such as the
     main kwargs parameter or setted at runtime).

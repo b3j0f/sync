@@ -33,7 +33,7 @@ from b3j0f.utils.ut import UTCase
 from ..core import Store
 
 from ...accessor.test.registry import (
-    MyAccessor0, MyAccessor12, MyRecord1, MyRecord2
+    MyAccessor0, MyAccessor12, MyRecord0, MyRecord1, MyRecord2
 )
 
 
@@ -99,7 +99,7 @@ class StoreTest(UTCase):
         self.assertEqual(record.two, MyRecord1.two.default * 2)
         self.assertEqual(record.three, 3)
 
-        self.assertEqual(record.stores, [self.store])
+        self.assertEqual(record.stores, set([self.store]))
 
     def test_add(self):
 
@@ -107,11 +107,14 @@ class StoreTest(UTCase):
 
         for record in records:
             self.assertFalse(record.stores)
+            self.assertNotIn(record, self.store)
 
         self.store.add(records=records)
 
         for record in records:
             self.assertTrue(record.stores)
+            self.assertIn(self.store, record.stores)
+            self.assertIn(record, self.store)
 
     def test_update(self):
 
@@ -140,7 +143,11 @@ class StoreTest(UTCase):
 
         record2 = self.store.get(record=record)
 
-        self.assertEqual(record2.raw(), record.raw())
+        self.assertEqual(record2, record)
+
+        record2 = self.store[record]
+
+        self.assertEqual(record2, record)
 
     def test_find(self):
 
@@ -164,11 +171,39 @@ class StoreTest(UTCase):
 
         record2 = self.store.get(record=record)
 
-        self.assertEqual(record2.raw(), record.raw())
+        self.assertEqual(record2, record)
 
         self.store.remove(records=[record2])
 
         self.assertFalse(self.store.data)
+
+        self.store += [record]
+
+        del self.store[record]
+
+        self.assertNotIn(record, self.store)
+
+        self.store += record
+
+        self.assertIn(record, self.store)
+
+        self.store -= record
+
+        self.assertNotIn(record, self.store)
+
+        self.store += record
+
+        self.assertIn(record, self.store)
+
+        self.store -= record
+
+        self.assertNotIn(record, self.store)
+
+    def test_rtypes(self):
+
+        rtypes = set(self.store.rtypes)
+
+        self.assertEqual(rtypes, set((MyRecord0, MyRecord1, MyRecord2)))
 
 
 if __name__ == '__main__':

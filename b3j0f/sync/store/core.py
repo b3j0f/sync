@@ -54,6 +54,19 @@ class Store(Record):
         self._accreg = AccessorRegistry(accessors=accessors)
 
     @property
+    def rtypes(self):
+        """Get all record types registered by accessors.
+
+        :rtype: list"""
+
+        result = []
+
+        for accessor in self._accreg.values():
+            result += accessor.__rtypes__
+
+        return result
+
+    @property
     def accessors(self):
         """Get accessors.
 
@@ -123,7 +136,7 @@ class Store(Record):
                     if isinstance(record, Record):
                         record.stores.add(self)
 
-            elif isinstance(result, Record) and result not in self:
+            elif isinstance(result, Record):
                 result.stores.add(self)
 
         return result
@@ -214,7 +227,7 @@ class Store(Record):
             func='find', rtype=rtype, data=data, limit=limit, skip=skip
         )
 
-    def remove(self, records, rtype=None, data=None):
+    def remove(self, records=None, rtype=None, data=None):
         """Remove input record from this.
 
         :param list records: records to remove.
@@ -227,15 +240,29 @@ class Store(Record):
             func='remove', rtype=rtype, records=records, data=data
         )
 
-        for record in records:
+        for record in result:
             while self in record.stores:
                 record.stores.remove(self)
+
+        return result
+
+    def clear(self):
+        """Remove all records.
+
+        :return: removed records."""
+
+        result = []
+
+        for rtype in self.rtypes:
+            result += self.remove(rtype=rtype)
 
         return result
 
     def __delitem__(self, record):
 
         self.remove(records=[record])
+
+        return self
 
     def __iadd__(self, records):
         """Add record(s).
@@ -248,6 +275,8 @@ class Store(Record):
 
         self.add(records=records)
 
+        return self
+
     def __ior__(self, records):
         """Update record(s) with upsert flag equals True.
 
@@ -258,6 +287,8 @@ class Store(Record):
             records = [records]
 
         self.update(records=records, upsert=True)
+
+        return self
 
     def __isub__(self, records):
         """Remove record(s) to this store.
@@ -270,6 +301,16 @@ class Store(Record):
 
         self.remove(records=records)
 
+        return self
+
     def __contains__(self, other):
 
-        return self.get(other) is None
+        result = True
+
+        try:
+            result = self.get(other) is not None
+
+        except Store.Error:
+            result = False
+
+        return result

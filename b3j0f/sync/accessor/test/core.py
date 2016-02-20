@@ -90,8 +90,16 @@ class MyAccessor(Accessor):
 
     def remove(self, store, records=None, rtype=None, data=None):
 
-        for record in records:
-            del store.data[record.one]
+        if records is None:
+            result = list(store.data.values)
+            store.data.clear()
+
+        else:
+            result = records
+            for record in records:
+                del store.data[record.one]
+
+        return result
 
 
 class MyStore(dict):
