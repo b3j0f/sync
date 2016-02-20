@@ -24,92 +24,181 @@
 # SOFTWARE.
 # --------------------------------------------------------------------
 
-"""Store registry module."""
+"""Accessor definition module."""
 
-__all__ = ['StoreRegistry']
+__all__ = ['Registry']
+
+from ..record.core import Record
 
 from .core import Store
 
+from six import reraise
 
-class StoreRegistry(Store):
-    """Store registry."""
 
-    def __init__(self, _stores=None, *args, **kwargs):
+class StoreRegistry(Record):
+    """Manage stores.
 
-        super(StoreRegistry, self).__init__(*args, **kwargs)
+    This class is used for synchronizing stores or for executing methods of CRUD
+    on several stores.
+    """
 
-        self._stores = [] if _stores is None else _stores
+    class Error(Exception):
+        """handle synchronizer errors."""
 
-    def record(self, rtype, data):
-        """Create a record related to store data field values."""
+    DEFAULT_COUNT = 5000  #: default synchronization count per step.
 
-        result = None
+    def __init__(self, stores=None, count=DEFAULT_COUNT, *args, **kwargs):
+        """
+        :param list stores: stores to synchronize.
+        :param int count: number of data to sync per iteration.
+        """
 
-        for store in self._stores:
+        super(StoreRegistry, self).__init__(
+            stores=stores, count=count, *args, **kwargs
+        )
+
+    def synchronize(
+            self, rtypes=None, data=None, sources=None, targets=None, count=None
+    ):
+        """Synchronize the source store with target stores.
+
+        :param list rtypes: record types to synchronize.
+        :param dict data: matching data content to retrieve from the sources.
+        :param list sources: stores from where get data.
+        :param list targets: stores from where put data.
+        :param int count: number of data to synchronize iteratively.
+        """
+
+        if sources is None:
+            sources = self.stores
+
+        if rtypes is None:
+            rtypes = set()
+            for source in sources:
+                for accessor in source.accessors:
+                    rtypes |= set(accessor.__rtypes__)
+
+            rtypes = list(rtypes)
+
+        if targets is None:
+            targets = self.stores
+
+        if count is None:
+            count = self.count
+
+        for source in sources:
+
+            for rtype in rtypes:
+
+                skip = 0
+
+                while True:
+
+                    records = source.find(
+                        rtype=rtype, data=data, skip=skip, limit=count
+                    )
+                    print(records, 'FFF')
+
+                    if records:
+
+                        for target in targets:
+
+                            try:
+                                target.update(records=records, upsert=True)
+
+                            except Store.Error as ex:
+                                reraise(
+                                    StoreRegistry.Error, StoreRegistry.Error(ex)
+                                )
+
+                        skip += count
+
+                    else:
+                        break
+
+    def _execute(self, func, stores=None, *args, **kwargs):
+        """
+        :param str func: store func name to execute.
+        :param list stores: stores where apply the func. Default is self source
+            and targets.
+        :param tuple args: func var arguments.
+        :param dict kwargs: func keyword arguments.
+        :return: func result if not many. Otherwise, an array of func results.
+        """
+
+        result = {}
+
+        if stores is None:
+            stores = self.stores
+
+        for store in stores:
             try:
-                result = store.record(rtype=rtype, data=data)
+                result[store] = getattr(store, func)(*args, **kwargs)
 
-            except Exception:
+            except Store.Error:
                 pass
-
-            else:
-                break
 
         return result
 
-    def remove(self, records):
-        """Add input record(s) in a store"""
+    def add(self, records, stores=None):
+        """Add records in a store.
 
-        for store in self._stores:
-            try:
-                store.add(records=records)
+        :param list records: records to add to the store.
+        :param list stores: specific stores to use.
+        :return: added records by store.
+        :rtype: dict"""
 
-            except Exception:
-                pass
+        return self._execute(func='add', records=records, stores=stores)
 
-    def update(self, records, upsert=False):
-        """Update a record(s) in a store."""
+    def update(self, records, upsert=False, stores=None):
+        """Update records in a store.
 
-        for store in self._stores:
-            try:
-                store.update(records=records, upsert=upsert)
+        :param list records: records to update in the input store.
+        :param bool upsert: if True (default False), add record if not exist.
+        :param list stores: specific stores to use.
+        :return: updated records by store.
+        :rtype: dict"""
 
-            except Exception:
-                pass
+        return self._execute(
+            func='update', upsert=upsert, records=records, stores=stores
+        )
 
-    def get(self, record):
-        """Get a record from a store."""
+    def get(self, record, stores=None):
+        """Get a record from stores.
 
-        result = None
+        :param Record record: record to get from the store.
+        :param list stores: specific stores to use.
+        :return: record by store.
+        :rtype: dict"""
 
-        for store in self._stores:
-            try:
-                result = store.get(record)
+        return self._execute(func='get', record=record, stores=stores)
 
-            except Exception:
-                pass
+    def find(self, rtype, data, limit=None, skip=None, stores=None):
+        """Find records from stores.
 
-            else:
-                break
+        :param int limit: maximal number of records to retrieve.
+        :param int skip: number of elements to avoid.
+        :param list stores: specific stores to use.
+        :return: records by store.
+        :rtype: dict"""
 
-        return result
+        return self._execute(
+            func='find',
+            rtype=rtype, data=data, limit=limit, skip=skip, stores=stores
+        )
 
-    def find(self, rtype, data=None):
-        """Find records from a store."""
+    def remove(self, records=None, rtype=None, data=None, stores=None):
+        """Remove records from target stores.
 
-        result = []
+        :param list records: records to remove.
+        :param type rtype: record type to remove.
+        :param dict data: data content to filter.
+        :param list stores: specific stores to use.
+        :return: removed records by store.
+        :rtype: dict
+        """
 
-        for store in self._stores:
-            result += store.find(rtype=rtype, data=data)
-
-        return result
-
-    def remove(self, records):
-        """Remove records from a store."""
-
-        for store in self._stores:
-            try:
-                store.remove(records=records)
-
-            except Exception:
-                pass
+        return self._execute(
+            func='remove',
+            records=records, rtype=rtype, data=data, stores=stores
+        )

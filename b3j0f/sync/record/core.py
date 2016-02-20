@@ -30,7 +30,7 @@ __all__ = ['Record']
 
 from inspect import getmembers
 
-from six import add_metaclass
+from six import add_metaclass, string_types
 
 from copy import deepcopy
 
@@ -74,7 +74,9 @@ class Record(object):
     cancel changes with the change method.
 
     The property ``isdirty`` is True if the record is modified from its creation
-    or last commit."""
+    or last commit.
+
+    The copy method is the implementation of the prototype design pattern."""
 
     class Error(Exception):
         """Handle record errors."""
@@ -89,9 +91,9 @@ class Record(object):
 
         super(Record, self).__init__()
 
-        self._stores = [] if _stores is None else _stores
-        self._olddata = {}
         self._data = data
+        self._olddata = {}
+        self._stores = set() if _stores is None else _stores
 
     def __setattr__(self, key, value):
 
@@ -118,9 +120,9 @@ class Record(object):
 
     def __getattribute__(self, key):
 
-        return object.__getattribute__(self, '_data').get(
-            key, object.__getattribute__(self, key)
-        )
+        supergetattribute = super(Record, self).__getattribute__
+
+        return supergetattribute('_data').get(key, supergetattribute(key))
 
     def __getattr__(self, key):
         """Try to redirect input attribute name to self values."""
@@ -131,7 +133,7 @@ class Record(object):
             result = self._data[key]
 
         except KeyError:
-            raise Record.Error('No field {0}'.format(key))
+            raise AttributeError('No field {0}'.format(key))
 
         return result
 
@@ -188,7 +190,7 @@ class Record(object):
 
         for store in stores:
             try:
-                store.delete(records=[self])
+                store.remove(records=[self])
 
             except Exception:
                 pass
@@ -209,9 +211,17 @@ class Record(object):
         _data = self._data
 
         if data is not None:
-            _data.update(data)
+            _data.update(deepcopy(data))
 
         return self.__class__(_stores=stores, **deepcopy(_data))
+
+    def __deepcopy__(self, memo):
+
+        for key in list(memo):
+            if not isinstance(key, string_types):
+                del memo[key]
+
+        return self.copy(data=memo)
 
     def raw(self, dirty=True, store=None, _raws=None):
         """Get raw data value.
@@ -226,6 +236,7 @@ class Record(object):
         result = None
 
         if store is None:
+            print('OOOO', self._data)
             result = deepcopy(self._data)
 
             if not dirty:
@@ -242,18 +253,34 @@ class Record(object):
                     result[name] = value
 
         else:
-           result = store.record2data(dirty=dirty, record=self)
+            result = store.record2data(dirty=dirty, record=self)
 
         return result
 
     def __eq__(self, other):
 
-        return self.raw() == other.raw()
-
-    def __cmp__(self, other):
-
-        return cmp(self.raw(), other.raw())
+        return cmp(self, other) == 0
 
     def __ne__(self, other):
 
-        return self.raw() != other.raw()
+        return not self.__eq__(other)
+
+    def __repr__(self):
+
+        stores = [id(store) for store in self.stores]
+
+        return '{0}[{1}](data: {2}, olddata: {3}, stores: {4})'.format(
+            self.__class__.__name__,
+            id(self), self._data, self._olddata, stores
+        )
+
+    def __hash__(self):
+
+        result = hash(self.__class__)
+
+        raw = self.raw()
+        for name in raw:
+            print(name)
+            result += hash(raw[name])
+
+        return result

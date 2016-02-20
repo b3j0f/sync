@@ -42,11 +42,19 @@ class MyRecord(Record):
 
 class MyStore(object):
 
-    def delete(self, *args, **kwargs):
-        pass
+    def __init__(self, *args, **kwargs):
 
-    def update(self, *args, **kwargs):
-        pass
+        super(MyStore, self).__init__(*args, **kwargs)
+
+        self.records = []
+
+    def remove(self, records, *args, **kwargs):
+
+        self.records.remove(records[0])
+
+    def update(self, records, *args, **kwargs):
+
+        self.records += records
 
 
 class RecordTest(UTCase):
@@ -54,6 +62,7 @@ class RecordTest(UTCase):
     def setUp(self):
 
         self.myrecord = MyRecord()
+        self.mystore = MyStore()
 
     def test_isdirty(self):
 
@@ -113,17 +122,37 @@ class RecordTest(UTCase):
 
         self.myrecord.a = 1
 
-    def test_commit(self):
+    def test_commit_delete(self):
 
-        pass
+        self.assertFalse(self.mystore.records)
+
+        self.myrecord.commit(stores=[self.mystore])
+
+        self.assertEqual(self.mystore.records, [self.myrecord])
+
+        self.myrecord.a = 2
+
+        self.assertEqual(self.mystore.records, [self.myrecord])
+
+        self.myrecord.commit(stores=[self.mystore])
+
+        self.assertEqual(self.mystore.records, [self.myrecord, self.myrecord])
 
     def test_delete(self):
 
-        pass
+        self.assertFalse(self.mystore.records)
+
+        self.myrecord.commit(stores=[self.mystore])
+
+        self.assertEqual(self.mystore.records, [self.myrecord])
+
+        self.myrecord.delete(stores=[self.mystore])
+
+        self.assertFalse(self.mystore.records)
 
     def test_copy(self):
 
-        self.myrecord.stores += [MyStore()]
+        self.myrecord.stores.add(MyStore())
 
         copy = self.myrecord.copy()
 

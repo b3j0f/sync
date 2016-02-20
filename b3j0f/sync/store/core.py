@@ -120,10 +120,10 @@ class Store(Record):
         else:
             if isinstance(result, Iterable):
                 for record in result:
-                    if isinstance(record, Record) and self not in record.stores:
-                        record.stores.append(self)
+                    if isinstance(record, Record):
+                        record.stores.add(self)
 
-            elif isinstance(result, Record) and self not in result.stores:
+            elif isinstance(result, Record) and result not in self:
                 result.stores.append(self)
 
         return result
@@ -269,3 +269,7 @@ class Store(Record):
             records = [records]
 
         self.remove(records=records)
+
+    def __contains__(self, other):
+
+        return self.get(other) is None

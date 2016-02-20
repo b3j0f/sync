@@ -52,7 +52,7 @@ with open(join(BASEPATH, NAMEPATH, 'version.py')) as f:
     VERSION = re_compile(_REGEX, re_S).match(_STREAM).group(1)
 
 KEYWORDS = [
-    'utils', 'tools', 'development', 'synchronizer', 'design pattern',
+    'utils', 'tools', 'development', 'synchronize', 'design pattern',
     'sync', 'observer', 'record', 'interoperability'
 ]
 

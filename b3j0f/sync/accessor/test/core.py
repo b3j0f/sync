@@ -36,16 +36,17 @@ from ...record.test.core import MyRecord
 
 
 class MyAccessor(Accessor):
+    """Accessor test implementation."""
 
     __rtypes__ = []  #: specify record type accessor implementations.
 
-    def record2data(self, store, record, dirty):
+    def record2data(self, store, record, dirty=False):
 
         return record.raw(dirty=dirty)
 
-    def data2record(self, store, rtype, data):
+    def data2record(self, store, rtype, data=None):
 
-        return rtype(**({} if data is None else data))
+        return rtype(**{} if data is None else data)
 
     def add(self, store, records):
 
@@ -73,7 +74,8 @@ class MyAccessor(Accessor):
     def find(self, store, rtype, data=None, limit=None, skip=None):
 
         result = list(
-            record for record in store.data.values() if isinstance(record, rtype)
+            record for record in store.data.values()
+            if isinstance(record, rtype)
         )
 
         if data is not None:
@@ -93,14 +95,17 @@ class MyAccessor(Accessor):
 
 
 class MyStore(dict):
+    """Store test implementation."""
 
     @property
     def data(self):
+        """quick access to private data."""
 
         return self
 
 
 class AccessorTest(UTCase):
+    """Test Accessor."""
 
     def setUp(self):
 
