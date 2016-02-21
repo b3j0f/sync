@@ -43,32 +43,58 @@ class StoreRegistryTest(UTCase):
 
     def setUp(self):
 
-        self.count = 5
-        self.myaccessors = [MyAccessor0(), MyAccessor12()]
-        self.mystores = list(
-            MyStore(accessors=self.myaccessors) for _ in range(self.count)
+        self.count = 3
+        self.accessors = [MyAccessor0(), MyAccessor12()]
+        self.stores = list(
+            MyStore(id=i, accessors=self.accessors) for i in range(self.count)
         )
-        self.registry = StoreRegistry(stores=self.mystores)
+        self.registry = StoreRegistry(stores=self.stores)
 
     def test_synchrone(self):
 
-        record0 = MyRecord0()
-        record1 = MyRecord1()
-        record2 = MyRecord2()
+        record0 = MyRecord0(one=0)
+        record2 = MyRecord2(one=2)
 
-        self.mystores[0].add(records=[record0])
-        self.mystores[1].add(records=[record1])
-        self.mystores[2].add(records=[record2])
+        self.stores[0].add(records=[record0])
+        self.stores[-1].add(records=[record2])
 
-        records0 = self.mystores[-1].find(rtype=MyRecord0)
-        self.assertFalse(records0)
-        print('OK')
-        self.registry.synchronize(
-            sources=[self.mystores[0]], targets=[self.mystores[-1]]
+        records = self.registry.find()
+        self.assertEqual(
+            records,
+            {
+                self.stores[0]: [record0],
+                self.stores[1]: [],
+                self.stores[2]: [record2],
+
+            }
         )
 
-        records0 = self.mystores[-1].find(rtype=MyRecord0)
-        self.assertTrue(records0)
+        records = self.registry.find(rtypes=[MyRecord0])
+        self.assertEqual(
+            records,
+            {
+                self.stores[0]: [record0],
+                self.stores[1]: [],
+                self.stores[2]: [],
+
+            }
+        )
+
+        self.registry.synchronize(
+            sources=[self.stores[0]], targets=[self.stores[2]]
+        )
+
+
+        records0 = self.registry.find(rtypes=[MyRecord0])
+        self.assertTrue(records0[self.stores[2]])
+
+        records2 = self.registry.find(rtypes=[MyRecord2])
+        self.assertFalse(records2[self.stores[0]])
+
+        self.registry.synchronize()
+
+        records2 = self.registry.find(rtypes=[MyRecord2])
+        self.assertTrue(records2[self.stores[0]])
 
 
 if __name__ == '__main__':

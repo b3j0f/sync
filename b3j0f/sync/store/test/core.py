@@ -43,7 +43,7 @@ class MyStore(Store):
 
         super(MyStore, self).__init__(*args, **kwargs)
 
-        self.data = {}
+        self._store = {}
 
 
 class StoreTest(UTCase):
@@ -65,24 +65,6 @@ class StoreTest(UTCase):
         self.store.accessors = [self.myaccessor0, self.myaccessor12]
 
         self.assertTrue(self.store._accreg)
-
-    def test_getaccessors(self):
-
-        accessor = self.store._getaccessor(aparam=MyRecord1)
-
-        self.assertIs(accessor, self.myaccessor12)
-
-        accessor = self.store._getaccessor(aparam=[MyRecord1, MyRecord2])
-
-        self.assertIs(accessor, self.myaccessor12)
-
-        accessor = self.store._getaccessor(aparam=MyRecord1())
-
-        self.assertIs(accessor, self.myaccessor12)
-
-        accessor = self.store._getaccessor(aparam=[MyRecord1(), MyRecord2()])
-
-        self.assertIs(accessor, self.myaccessor12)
 
     def test_create(self):
 
@@ -151,14 +133,14 @@ class StoreTest(UTCase):
 
     def test_find(self):
 
-        records = self.store.find(rtype=MyRecord1)
+        records = self.store.find(rtypes=[MyRecord1])
         self.assertFalse(records)
 
         records = [MyRecord1(two=1), MyRecord1(two=2)]
 
         self.store.add(records=records)
 
-        records = self.store.find(rtype=MyRecord1)
+        records = self.store.find(rtypes=[MyRecord1])
         self.assertEqual(len(records), 1)
 
     def test_remove(self):
@@ -175,7 +157,7 @@ class StoreTest(UTCase):
 
         self.store.remove(records=[record2])
 
-        self.assertFalse(self.store.data)
+        self.assertFalse(self.store._store)
 
         self.store += [record]
 

@@ -70,14 +70,3 @@ class AccessorRegistry(dict):
                 for rtype in accessor.__rtypes__:
                     if rtype in self:
                         del self[rtype]
-
-    def get(self, key, default=None):
-        """Get the accessor able to process input record (type).
-
-        :param key: record type.
-        :type key: type or Record"""
-
-        if isinstance(key, Record):
-            key = key.__class__
-
-        return super(AccessorRegistry, self).get(key, default)

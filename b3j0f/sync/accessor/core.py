@@ -90,35 +90,36 @@ class Accessor(Record):
 
         raise NotImplementedError()
 
-    def count(self, store, rtype, data=None):
+    def count(self, store, rtypes, data=None):
         """Get number of data in a store.
 
         :param Store store: store from where get number of data.
-        :param type rtype: record type.
+        :param list rtypes: record types.
         :param dict data: data content to filter.
         :rtype: int."""
 
         raise NotImplementedError()
 
-    def find(self, store, rtype, data=None, limit=None, skip=None):
+    def find(self, store, rtypes, data=None, limit=None, skip=None, sort=None):
         """Find records from a store.
 
         :param Store store: store from where find data.
-        :param type rtype: record type to retrieve.
+        :param list rtypes: record types to retrieve. Default is self.rtypes.
         :param dict data: data content to filter.
         :param int limit: maximal number of records to retrieve.
         :param int skip: number of elements to avoid.
+        :param list sort: list of field name to sort by value.
         :return: records of input type and field values.
         :rtype: list"""
 
         raise NotImplementedError()
 
-    def remove(self, store, records=None, rtype=None, data=None):
+    def remove(self, store, rtypes, records=None, data=None):
         """Remove records from a store.
 
         :param Store store: store from which remove records.
-        :param list records: records to remove.
-        :param type rtype: record type to remove.
-        :param dict data: data content to filter."""
+        :param list records: records to remove. Default is all records.
+        :param list rtype: record types to remove. Default is self.rtypes.
+        :param dict filter: data content to filter."""
 
         raise NotImplementedError()

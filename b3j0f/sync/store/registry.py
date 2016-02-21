@@ -26,7 +26,7 @@
 
 """Accessor definition module."""
 
-__all__ = ['Registry']
+__all__ = ['StoreRegistry']
 
 from ..record.core import Record
 
@@ -58,14 +58,15 @@ class StoreRegistry(Record):
         )
 
     def synchronize(
-            self, rtypes=None, data=None, sources=None, targets=None, count=None
+            self,
+            rtypes=None, data=None, sources=None, targets=None, count=None
     ):
         """Synchronize the source store with target stores.
 
         :param list rtypes: record types to synchronize.
         :param dict data: matching data content to retrieve from the sources.
-        :param list sources: stores from where get data.
-        :param list targets: stores from where put data.
+        :param list sources: stores from where get data. Default self stores.
+        :param list targets: stores from where put data. Default self stores.
         :param int count: number of data to synchronize iteratively.
         """
 
@@ -75,8 +76,7 @@ class StoreRegistry(Record):
         if rtypes is None:
             rtypes = set()
             for source in sources:
-                for accessor in source.accessors:
-                    rtypes |= set(accessor.__rtypes__)
+                rtypes |= set(source.rtypes)
 
             rtypes = list(rtypes)
 
@@ -88,33 +88,29 @@ class StoreRegistry(Record):
 
         for source in sources:
 
-            for rtype in rtypes:
+            skip = 0
 
-                skip = 0
+            while True:
 
-                while True:
+                records = source.find(
+                    rtypes=rtypes, data=data, skip=skip, limit=count
+                )
 
-                    records = source.find(
-                        rtype=rtype, data=data, skip=skip, limit=count
-                    )
-                    print(records, 'FFF')
+                if records:
+                    for target in targets:
 
-                    if records:
+                        try:
+                            target.update(records=records, upsert=True)
 
-                        for target in targets:
+                        except Store.Error as ex:
+                            reraise(
+                                StoreRegistry.Error, StoreRegistry.Error(ex)
+                            )
 
-                            try:
-                                target.update(records=records, upsert=True)
+                    skip += count
 
-                            except Store.Error as ex:
-                                reraise(
-                                    StoreRegistry.Error, StoreRegistry.Error(ex)
-                                )
-
-                        skip += count
-
-                    else:
-                        break
+                else:
+                    break
 
     def _execute(self, func, stores=None, *args, **kwargs):
         """
@@ -136,7 +132,7 @@ class StoreRegistry(Record):
                 result[store] = getattr(store, func)(*args, **kwargs)
 
             except Store.Error:
-                pass
+                continue
 
         return result
 
@@ -173,25 +169,30 @@ class StoreRegistry(Record):
 
         return self._execute(func='get', record=record, stores=stores)
 
-    def find(self, rtype, data, limit=None, skip=None, stores=None):
+    def find(
+            self, stores=None,
+            rtypes=None, data=None, limit=None, skip=None, sort=None,
+    ):
         """Find records from stores.
 
         :param int limit: maximal number of records to retrieve.
         :param int skip: number of elements to avoid.
+        :param list sort: data field name to sort.
+        :param list rtypes: record types to find. Default is all.
         :param list stores: specific stores to use.
         :return: records by store.
         :rtype: dict"""
 
         return self._execute(
-            func='find',
-            rtype=rtype, data=data, limit=limit, skip=skip, stores=stores
+            func='find', stores=stores,
+            rtypes=rtypes, data=data, limit=limit, skip=skip, sort=sort
         )
 
-    def remove(self, records=None, rtype=None, data=None, stores=None):
+    def remove(self, records=None, rtypes=None, data=None, stores=None):
         """Remove records from target stores.
 
         :param list records: records to remove.
-        :param type rtype: record type to remove.
+        :param list rtypes: record types to remove.
         :param dict data: data content to filter.
         :param list stores: specific stores to use.
         :return: removed records by store.
@@ -200,5 +201,5 @@ class StoreRegistry(Record):
 
         return self._execute(
             func='remove',
-            records=records, rtype=rtype, data=data, stores=stores
+            records=records, rtypes=rtypes, data=data, stores=stores
         )

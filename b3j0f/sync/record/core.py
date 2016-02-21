@@ -212,9 +212,9 @@ class Record(object):
                 except KeyError:
                     pass
 
-    def __del__(self):
-
-        self.delete()
+    def __dele__(self):
+        print('fff', self)
+        #self.delete()
 
     def copy(self, data=None, stores=None):
         """Copy this record with input data values.
@@ -275,7 +275,7 @@ class Record(object):
 
     def __eq__(self, other):
 
-        return hash(self) == hash(other)
+        return self is other or hash(self) == hash(other)
 
     def __ne__(self, other):
 

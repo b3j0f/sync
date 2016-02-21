@@ -28,8 +28,6 @@
 
 __all__ = ['Store']
 
-from collections import Iterable
-
 from ..record.core import Record
 from ..accessor.registry import AccessorRegistry
 
@@ -61,7 +59,7 @@ class Store(Record):
 
         result = []
 
-        for accessor in self._accreg.values():
+        for accessor in self.accessors:
             result += accessor.__rtypes__
 
         return result
@@ -83,64 +81,6 @@ class Store(Record):
         self._accreg.clear()
         self._accreg.register(accessors=value)
 
-    def _getaccessor(self, aparam):
-        """Get the right accessor able to process input record.
-
-        :param aparam: record(s) to process with the output accessor.
-        :type aparam: Record, type or list
-        :raises: Store.Error if no accessor is available."""
-
-        record = (
-            aparam[0]
-            if (isinstance(aparam, Iterable) and aparam)
-            else aparam
-        )
-
-        result = self._accreg.get(record)
-
-        if result is None:
-            raise Store.Error('No store found to process {0}'.format(record))
-
-        return result
-
-    def _execute(self, func, record=None, records=None, rtype=None, **kwargs):
-        """Execute input func name to the right accessor choosen with input
-        aparam.
-
-        :param str func: accessor func name.
-        :param aparam: accessor selector.
-        :param dict kwargs: function keyword arguments.
-        :return: func result.
-        """
-
-        if records is not None:
-            aparam = kwargs['records'] = records
-
-        elif record is not None:
-            aparam = kwargs['record'] = record
-
-        else:
-            aparam = kwargs['rtype'] = rtype
-
-        accessor = self._getaccessor(aparam)
-
-        try:
-            result = getattr(accessor, func)(store=self, **kwargs)
-
-        except Exception as ex:
-            reraise(Store.Error, Store.Error(ex))
-
-        else:
-            if isinstance(result, Iterable):
-                for record in result:
-                    if isinstance(record, Record):
-                        record.stores.add(self)
-
-            elif isinstance(result, Record):
-                result.stores.add(self)
-
-        return result
-
     def record2data(self, record, dirty=True):
         """Get a specific store data from a record.
 
@@ -148,7 +88,7 @@ class Store(Record):
         :param bool dirty: if True (default) get dirty values in record2data.
         """
 
-        return self._execute(func='record2data', record=record, dirty=dirty)
+        return self._execute(cmd='record2data', record=record, dirty=dirty)
 
     def data2record(self, rtype, data=None):
         """Create a record with input type and store data values.
@@ -158,7 +98,80 @@ class Store(Record):
         :rtype: Record.
         :raises: Store.Error in case of error."""
 
-        return self._execute(func='data2record', rtype=rtype, data=data)
+        return self._execute(cmd='data2record', rtype=rtype, data=data)
+
+
+    def _execute(self, cmd, **kwargs):
+        """Get kwargs by accessor.
+
+        :param str cmd: command name to execute on accessors.
+        :param bool multi: flag for multi result or not.
+        :return: accessor command result(s)."""
+
+        result = []
+
+        acckwargs = {}
+
+        multi = 'records' in kwargs or 'rtypes' in kwargs
+
+        if multi:
+            if 'records' in kwargs:
+                records = kwargs.pop('records')
+
+                for record in records:
+                    accessor = self._accreg.get(record.__class__)
+                    params = acckwargs.setdefault(accessor, {})
+                    params.setdefault('records', []).append(record)
+
+            if 'rtypes' in kwargs:
+                rtypes = kwargs.pop('rtypes')
+
+                if rtypes is None:
+                    rtypes = self.rtypes
+
+                for rtype in rtypes:
+                    accessor = self._accreg.get(rtype)
+                    params = acckwargs.setdefault(accessor, {})
+                    params.setdefault('rtypes', []).append(rtype)
+
+        else:
+            if 'record' in kwargs:
+                record = kwargs['record']
+                accessor = self._accreg.get(record.__class__)
+                acckwargs[accessor] = {'record': record}
+
+
+            if 'rtype' in kwargs:
+                rtype = kwargs['rtype']
+                accessor = self._accreg.get(rtype)
+                acckwargs[accessor] = {}
+
+        rstorecmd = cmd if cmd == 'remove' else 'add'  # record store command
+
+        for accessor in acckwargs:
+            params = acckwargs[accessor]
+            params.update(kwargs)
+
+            try:
+                accres = getattr(accessor, cmd)(store=self, **params)
+
+            except Exception as ex:
+                reraise(Store.Error, Store.Error(ex))
+
+            else:
+                if multi:
+                    result += accres
+
+                    for record in accres:
+                        if isinstance(record, Record):
+                            getattr(record.stores, rstorecmd)(self)
+
+                else:
+                    result = accres
+                    if isinstance(accres, Record):
+                        getattr(accres.stores, rstorecmd)(self)
+
+        return result
 
     def add(self, records):
         """Add records and register this in stores of records.
@@ -170,7 +183,7 @@ class Store(Record):
         :rtype: list
         :raises: Store.Error in case of error."""
 
-        return self._execute(func='add', records=records)
+        return self._execute(cmd='add', records=records)
 
     def update(self, records, upsert=False):
         """Update records in this store and register this in stores of records.
@@ -182,7 +195,7 @@ class Store(Record):
         :rtype: list
         :raises: Store.Error in case of error."""
 
-        return self._execute(func='update', records=records, upsert=upsert)
+        return self._execute(cmd='update', records=records, upsert=upsert)
 
     def get(self, record):
         """Get input record from this store.
@@ -195,66 +208,52 @@ class Store(Record):
         :rtype: Record
         :raises: Store.Error in case of error."""
 
-        return self._execute(func='get', record=record)
+        return self._execute(cmd='get', record=record)
 
     def __getitem__(self, key):
 
         return self.get(record=key)
 
-    def count(self, rtype, data=None):
+    def count(self, rtypes=None, data=None):
         """Get number of data in a store.
 
-        :param type rtype: record type.
+        :param list rtype: record types. Default is self.rtypes
         :param dict data: data content to filter.
         :rtype: int."""
 
-        return self._execute(func='count', rtype=rtype, data=data)
+        return self._execute(cmd='count', rtypes=rtypes, data=data)
 
-    def find(self, rtype, data=None, limit=None, skip=None):
+    def find(self, rtypes=None, data=None, limit=None, skip=None, sort=None):
         """Find records related to type and data and register this to result
         stores.
 
-        :param type rtype: record type to find.
+        :param list rtypes: record types to find. Default is self.rtypes.
         :param dict data: record data to filter. Default None.
         :param int limit: maximal number of documents to retrieve.
         :param int skip: number of elements to avoid.
+        :param list sort: data field name to sort.
         :return: records of input type and field values.
         :rtype: list
         :raises: Store.Error in case of error.
         """
 
         return self._execute(
-            func='find', rtype=rtype, data=data, limit=limit, skip=skip
+            cmd='find',
+            rtypes=rtypes, data=data, limit=limit, skip=skip, sort=sort
         )
 
-    def remove(self, records=None, rtype=None, data=None):
+    def remove(self, records=None, rtypes=None, data=None):
         """Remove input record from this.
 
         :param list records: records to remove.
-        :param type rtype: record type to remove.
-        :param dict data: data content to filter.
-        :raises: Store.Error in case of error.
-        """
+        :param list rtypes: record types to remove.
+        :param dict data: date value to filter.
+
+        :raises: Store.Error in case of error."""
 
         result = self._execute(
-            func='remove', rtype=rtype, records=records, data=data
+            cmd='remove', records=records, rtypes=rtypes, data=data
         )
-
-        for record in result:
-            while self in record.stores:
-                record.stores.remove(self)
-
-        return result
-
-    def clear(self):
-        """Remove all records.
-
-        :return: removed records."""
-
-        result = []
-
-        for rtype in self.rtypes:
-            result += self.remove(rtype=rtype)
 
         return result
 

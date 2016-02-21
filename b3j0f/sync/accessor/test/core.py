@@ -51,7 +51,7 @@ class MyAccessor(Accessor):
     def add(self, store, records):
 
         for record in records:
-            store.data[record.one] = record.copy()
+            store._store[record.one] = record.copy()
 
         return records
 
@@ -59,23 +59,24 @@ class MyAccessor(Accessor):
 
         if not upsert:
             for record in records:
-                if record.one not in store.data:
+                if record.one not in store._store:
                     raise Exception()
 
         for record in records:
-            store.data[record.one] = record.copy()
+            copy = record.copy()
+            store._store[record.one] = copy
 
         return records
 
     def get(self, store, record):
 
-        return store.data[record.one]
+        return store._store[record.one]
 
-    def find(self, store, rtype, data=None, limit=None, skip=None):
+    def find(self, store, rtypes, data=None, limit=None, skip=None, sort=None):
 
         result = list(
-            record for record in store.data.values()
-            if isinstance(record, rtype)
+            record for record in store._store.values()
+            if isinstance(record, tuple(rtypes))
         )
 
         if data is not None:
@@ -86,18 +87,33 @@ class MyAccessor(Accessor):
                     if key in raw and data[key] == raw[key]:
                         result.append(record)
 
+        if skip is not None:
+            result = result[skip:]
+
+        if limit is not None:
+            result = result[:limit]
+
         return result
 
-    def remove(self, store, records=None, rtype=None, data=None):
+    def count(self, store, rtypes, data=None):
+
+        return len(self.find(store, rtypes, data))
+
+    def remove(self, store, rtypes, records=None, data=None):
+
+        result = []
 
         if records is None:
-            result = list(store.data.values)
-            store.data.clear()
+
+            for key in list(store._store):
+                val = store._store[key]
+                if isinstance(val, tuple(rtypes)):
+                    result.append(store._store.pop(key))
 
         else:
             result = records
             for record in records:
-                del store.data[record.one]
+                del store._store[record.one]
 
         return result
 
@@ -106,7 +122,7 @@ class MyStore(dict):
     """Store test implementation."""
 
     @property
-    def data(self):
+    def _store(self):
         """quick access to private data."""
 
         return self
@@ -120,6 +136,7 @@ class AccessorTest(UTCase):
         self.store = MyStore()
         self.accessor = MyAccessor()
         self.record = MyRecord()
+        self.rtypes = [MyRecord]
 
     def test_create(self):
 
@@ -165,14 +182,14 @@ class AccessorTest(UTCase):
     def test_find(self):
 
         records = self.accessor.find(
-            store=self.store, rtype=MyRecord, data={'one': 1}
+            store=self.store, rtypes=[MyRecord], data={'one': 1}
         )
 
         self.assertFalse(records)
 
         self.accessor.add(store=self.store, records=[self.record])
         records = self.accessor.find(
-            store=self.store, rtype=MyRecord, data={'one': 1}
+            store=self.store, rtypes=[MyRecord], data={'one': 1}
         )
 
         self.assertTrue(records)
@@ -181,12 +198,15 @@ class AccessorTest(UTCase):
 
         self.assertRaises(
             Exception,
-            self.accessor.remove, store=self.store, records=[self.record]
+            self.accessor.remove, store=self.store, records=[self.record],
+            rtypes=self.rtypes
         )
 
         self.accessor.add(store=self.store, records=[self.record])
 
-        self.accessor.remove(store=self.store, records=[self.record])
+        self.accessor.remove(
+            store=self.store, rtypes=self.rtypes, records=[self.record]
+        )
 
         self.assertFalse(self.store)
 

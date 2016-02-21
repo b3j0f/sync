@@ -75,9 +75,6 @@ class AccessorRegistryTest(UTCase):
         accessor = self.ar.get(MyRecord0)
         self.assertIs(accessor, self.myaccessor0)
 
-        accessor = self.ar.get(MyRecord0())
-        self.assertIs(accessor, self.myaccessor0)
-
         self.ar.unregister(accessors=[accessor])
 
         accessor = self.ar.get(MyRecord0)
@@ -94,29 +91,26 @@ class AccessorRegistryTest(UTCase):
         accessor = self.ar.get(MyRecord1)
         self.assertIs(accessor, self.myaccessor12)
 
-        accessor = self.ar.get(MyRecord2())
-        self.assertIs(accessor, self.myaccessor12)
-
         self.ar.unregister(rtypes=[MyRecord1])
 
-        accessor = self.ar.get(key=MyRecord1)
+        accessor = self.ar.get(MyRecord1)
         self.assertIsNone(accessor)
 
-        accessor = self.ar.get(key=MyRecord2)
+        accessor = self.ar.get(MyRecord2)
         self.assertIs(accessor, self.myaccessor12)
 
-        accessor = self.ar.get(key=MyRecord1, default=1)
+        accessor = self.ar.get(MyRecord1, 1)
         self.assertEqual(accessor, 1)
 
-        accessor = self.ar.get(key=MyRecord2, default=1)
+        accessor = self.ar.get(MyRecord2, 1)
         self.assertIs(accessor, self.myaccessor12)
 
         self.ar.unregister(accessors=[self.myaccessor12])
 
-        accessor = self.ar.get(key=MyRecord1)
+        accessor = self.ar.get(MyRecord1)
         self.assertIsNone(accessor)
 
-        accessor = self.ar.get(key=MyRecord2)
+        accessor = self.ar.get(MyRecord2)
         self.assertIsNone(accessor)
 
 
