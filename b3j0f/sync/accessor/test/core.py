@@ -51,7 +51,7 @@ class MyAccessor(Accessor):
     def add(self, store, records):
 
         for record in records:
-            store._store[record.one] = record.copy()
+            store._store[record] = record.copy()
 
         return records
 
@@ -59,18 +59,18 @@ class MyAccessor(Accessor):
 
         if not upsert:
             for record in records:
-                if record.one not in store._store:
+                if record not in store._store:
                     raise Exception()
 
         for record in records:
             copy = record.copy()
-            store._store[record.one] = copy
+            store._store[record] = copy
 
         return records
 
     def get(self, store, record):
 
-        return store._store[record.one]
+        return store._store[record]
 
     def find(self, store, rtypes, data=None, limit=None, skip=None, sort=None):
 
@@ -113,7 +113,7 @@ class MyAccessor(Accessor):
         else:
             result = records
             for record in records:
-                del store._store[record.one]
+                del store._store[record]
 
         return result
 
@@ -150,7 +150,7 @@ class AccessorTest(UTCase):
 
         self.accessor.add(store=self.store, records=[self.record])
 
-        self.assertEqual(self.store[self.record.one].one, self.record.one)
+        self.assertEqual(self.store[self.record].one, self.record.one)
 
     def test_update(self):
 
@@ -163,13 +163,13 @@ class AccessorTest(UTCase):
             store=self.store, records=[self.record], upsert=True
         )
 
-        self.assertEqual(self.store[self.record.one].two, self.record.two)
+        self.assertEqual(self.store[self.record].two, self.record.two)
 
-        self.record.two = - self.record.two
-        self.assertNotEqual(self.store[self.record.one].two, self.record.two)
+        self.record.two = -self.record.two
+        self.assertNotEqual(self.store[self.record].two, self.record.two)
         self.accessor.update(store=self.store, records=[self.record])
 
-        self.assertEqual(self.store[self.record.one].two, self.record.two)
+        self.assertEqual(self.store[self.record].two, self.record.two)
 
     def test_get(self):
 

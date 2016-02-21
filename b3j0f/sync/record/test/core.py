@@ -33,12 +33,20 @@ from b3j0f.utils.ut import UTCase
 from ..core import Record
 from ..field import Field
 
+from random import random
+
 
 class MyRecord(Record):
 
     one = Field(ftype=int, default=1)
     two = Field(default=2)
 
+    def __init__(self, id=None, *args, **kwargs):
+
+        if id is None:
+            id = random()
+
+        super(MyRecord, self).__init__(id=id, *args, **kwargs)
 
 class MyStore(object):
 
@@ -152,9 +160,6 @@ class RecordTest(UTCase):
         self.myrecord.commit(stores=[self.mystore])
         self.assertIn(self.myrecord, self.mystore.records)
 
-        del self.myrecord
-        self.assertFalse(self.mystore.records)
-
     def test_copy(self):
 
         self.myrecord.stores.add(MyStore())
@@ -199,8 +204,8 @@ class RecordTest(UTCase):
 
     def test_eq(self):
 
-        myrecord1 = MyRecord()
-        myrecord2 = MyRecord()
+        myrecord1 = MyRecord(id=1)
+        myrecord2 = MyRecord(id=1)
         self.assertEqual(myrecord1, myrecord2)
 
         myrecord1.a = 2

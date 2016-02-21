@@ -141,6 +141,9 @@ class StoreTest(UTCase):
         self.store.add(records=records)
 
         records = self.store.find(rtypes=[MyRecord1])
+        self.assertEqual(len(records), 2)
+
+        records = self.store.find(data={'two': 2})
         self.assertEqual(len(records), 1)
 
     def test_remove(self):

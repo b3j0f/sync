@@ -90,6 +90,7 @@ class StoreRegistryTest(UTCase):
 
         records2 = self.registry.find(rtypes=[MyRecord2])
         self.assertFalse(records2[self.stores[0]])
+        self.assertTrue(records2[self.stores[2]])
 
         self.registry.synchronize()
 

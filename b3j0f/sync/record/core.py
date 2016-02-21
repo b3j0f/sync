@@ -212,10 +212,6 @@ class Record(object):
                 except KeyError:
                     pass
 
-    def __dele__(self):
-        print('fff', self)
-        #self.delete()
-
     def copy(self, data=None, stores=None):
         """Copy this record with input data values.
 
@@ -292,6 +288,6 @@ class Record(object):
 
     def __hash__(self):
 
-        result = hash(self.__class__) * hashiter(self.raw())
+        result = hash(self.__class__) * hashiter(self.raw(dirty=False))
 
         return result

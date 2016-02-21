@@ -91,14 +91,12 @@ class StoreRegistry(Record):
             skip = 0
 
             while True:
-
                 records = source.find(
                     rtypes=rtypes, data=data, skip=skip, limit=count
                 )
 
                 if records:
                     for target in targets:
-
                         try:
                             target.update(records=records, upsert=True)
 
