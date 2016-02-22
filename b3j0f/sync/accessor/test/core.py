@@ -72,7 +72,10 @@ class MyAccessor(Accessor):
 
         return store._store[record]
 
-    def find(self, store, rtypes, data=None, limit=None, skip=None, sort=None):
+    def find(
+        self, store, rtypes, records=None, data=None,
+        limit=None, skip=None, sort=None
+    ):
 
         result = list(
             record for record in store._store.values()

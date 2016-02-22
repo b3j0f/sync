@@ -59,7 +59,8 @@ class StoreRegistry(Record):
 
     def synchronize(
             self,
-            rtypes=None, data=None, sources=None, targets=None, count=None
+            rtypes=None, data=None, sources=None, targets=None, count=None,
+            override=False
     ):
         """Synchronize the source store with target stores.
 
@@ -68,7 +69,8 @@ class StoreRegistry(Record):
         :param list sources: stores from where get data. Default self stores.
         :param list targets: stores from where put data. Default self stores.
         :param int count: number of data to synchronize iteratively.
-        """
+        :param bool override: if False, update only data which does not exist
+            in targets."""
 
         if sources is None:
             sources = self.stores
@@ -98,7 +100,9 @@ class StoreRegistry(Record):
                 if records:
                     for target in targets:
                         try:
-                            target.update(records=records, upsert=True)
+                            target.update(
+                                records=records, upsert=True, override=override
+                            )
 
                         except Store.Error as ex:
                             reraise(
@@ -169,21 +173,25 @@ class StoreRegistry(Record):
 
     def find(
             self, stores=None,
-            rtypes=None, data=None, limit=None, skip=None, sort=None,
+            rtypes=None, records=None, data=None,
+            limit=None, skip=None, sort=None,
     ):
         """Find records from stores.
 
+        :param list stores: specific stores to use.
+        :param list rtypes: record types to find. Default is all.
+        :param list records: records to find.
         :param int limit: maximal number of records to retrieve.
         :param int skip: number of elements to avoid.
         :param list sort: data field name to sort.
-        :param list rtypes: record types to find. Default is all.
-        :param list stores: specific stores to use.
+
         :return: records by store.
         :rtype: dict"""
 
         return self._execute(
             func='find', stores=stores,
-            rtypes=rtypes, data=data, limit=limit, skip=skip, sort=sort
+            rtypes=rtypes, records=records, data=data,
+            limit=limit, skip=skip, sort=sort
         )
 
     def remove(self, records=None, rtypes=None, data=None, stores=None):

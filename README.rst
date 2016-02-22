@@ -62,18 +62,22 @@ pip install b3j0f.sync
 Features
 ========
 
-The global architecture is composed of four classes::
+The global architecture is composed of three classes::
 
    - Record: pivot data to persist in heterogeneous stores. Keep a transparent reference to stores in order to ensure easy synchronization and consistency among stores.
-   - Store: set of data with CRUD operations. CRUD operations are delegated to specific Accessors. To specialize to a database, CMDB, project management system, etc. depending on your needs.
-   - Accessor: implementation of record CRUD operations in a store.
-   - FieldDescriptor: specify record field type and default value.
+   - Store: Record such as a set of data with CRUD operations. CRUD operations are delegated to specific Accessors. To specialize to a database, CMDB, project management system, etc. depending on your needs.
+   - Accessor: Record and implementation of record CRUD operations in a store.
 
-If you want to ensure synchronization of data between three
+Two optional classes are provided in order to ease the use of previous ones::
+
+   - Field: used to specify data content in records.
+   - StoreRegistry: Record which permits to do CRUD and synchronization operations over several stores.
 
 If you want to use this library to your own needs, you have to extend abstract classes with implementation of 6 CRUD methods for the Accessor.
 
 The system does not use semantical mechanisms, therefore, the system is in a **best effort** mode instead to be exhaustive.
+
+And you might override hash methods of records.
 
 Examples
 --------

@@ -118,10 +118,11 @@ class Store(Record):
             if 'records' in kwargs:
                 records = kwargs.pop('records')
 
-                for record in records:
-                    accessor = self._accreg.get(record.__class__)
-                    params = acckwargs.setdefault(accessor, {})
-                    params.setdefault('records', []).append(record)
+                if records is not None:
+                    for record in records:
+                        accessor = self._accreg.get(record.__class__)
+                        params = acckwargs.setdefault(accessor, {})
+                        params.setdefault('records', []).append(record)
 
             if 'rtypes' in kwargs:
                 rtypes = kwargs.pop('rtypes')
@@ -185,15 +186,21 @@ class Store(Record):
 
         return self._execute(cmd='add', records=records)
 
-    def update(self, records, upsert=False):
+    def update(self, records, upsert=False, override=False):
         """Update records in this store and register this in stores of records.
 
         :param list records: records to update in this store. Must be same type.
         :param bool upsert: if True (False by default), add the record if not
             exist.
+        :param bool override: if False (default), check before if records to
+            update are different in this store.
         :return: updated records.
         :rtype: list
         :raises: Store.Error in case of error."""
+
+        if not override:  # update records which are differents
+            frecords = self.find(records=records)
+            records = list(set(records) - set(frecords))
 
         return self._execute(cmd='update', records=records, upsert=upsert)
 
@@ -223,11 +230,12 @@ class Store(Record):
 
         return self._execute(cmd='count', rtypes=rtypes, data=data)
 
-    def find(self, rtypes=None, data=None, limit=None, skip=None, sort=None):
+    def find(self, rtypes=None, records=None, data=None, limit=None, skip=None, sort=None):
         """Find records related to type and data and register this to result
         stores.
 
         :param list rtypes: record types to find. Default is self.rtypes.
+        :param list records: records to find.
         :param dict data: record data to filter. Default None.
         :param int limit: maximal number of documents to retrieve.
         :param int skip: number of elements to avoid.
@@ -239,7 +247,8 @@ class Store(Record):
 
         return self._execute(
             cmd='find',
-            rtypes=rtypes, data=data, limit=limit, skip=skip, sort=sort
+            rtypes=rtypes, records=records, data=data,
+            limit=limit, skip=skip, sort=sort
         )
 
     def remove(self, records=None, rtypes=None, data=None):

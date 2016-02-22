@@ -100,11 +100,15 @@ class Accessor(Record):
 
         raise NotImplementedError()
 
-    def find(self, store, rtypes, data=None, limit=None, skip=None, sort=None):
+    def find(
+        self, store, rtypes, records=None, data=None,
+        limit=None, skip=None, sort=None
+    ):
         """Find records from a store.
 
         :param Store store: store from where find data.
         :param list rtypes: record types to retrieve. Default is self.rtypes.
+        :param list records: records to find.
         :param dict data: data content to filter.
         :param int limit: maximal number of records to retrieve.
         :param int skip: number of elements to avoid.
